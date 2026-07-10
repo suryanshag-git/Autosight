@@ -1,0 +1,55 @@
+from datetime import datetime
+from typing import Any, Dict, Optional
+from uuid import UUID
+from pydantic import Field
+from app.schemas.base import BaseSchema
+
+class InterviewBase(BaseSchema):
+    title: str = Field(
+        ...,
+        description="The title of the interview session.",
+        examples=["User Interview with John Doe - Product Feedback"]
+    )
+    transcript: str = Field(
+        ...,
+        description="The full raw text transcript of the interview."
+    )
+    participant_info: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Optional structured metadata about the participant (e.g. email, role, company).",
+        examples=[{"email": "john.doe@example.com", "role": "PM", "company": "Acme Corp"}]
+    )
+    date: Optional[datetime] = Field(
+        default=None,
+        description="The date and time when the interview occurred.",
+        examples=["2026-07-10T14:30:00Z"]
+    )
+    metadata: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Any additional custom metadata related to the interview session.",
+        examples=[{"source": "Zoom upload", "duration_seconds": 1800}]
+    )
+
+class InterviewCreate(InterviewBase):
+    """
+    Schema for creating a new interview. All base fields are required/optional as specified.
+    """
+    pass
+
+class InterviewUpdate(BaseSchema):
+    """
+    Schema for updating an existing interview. All fields are optional.
+    """
+    title: Optional[str] = Field(None, description="The updated title.")
+    transcript: Optional[str] = Field(None, description="The updated transcript text.")
+    participant_info: Optional[Dict[str, Any]] = Field(None, description="Updated participant information.")
+    date: Optional[datetime] = Field(None, description="Updated date of the interview.")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Updated custom metadata.")
+
+class InterviewResponse(InterviewBase):
+    """
+    Schema returning the interview details from the database, including system fields.
+    """
+    id: UUID = Field(..., description="Unique database ID of the interview.")
+    created_at: datetime = Field(..., description="Timestamp of when the interview record was created.")
+    updated_at: datetime = Field(..., description="Timestamp of when the interview record was last updated.")
