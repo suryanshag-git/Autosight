@@ -35,13 +35,41 @@ class TranscriptExtractor:
             raise ValueError("Transcript text cannot be empty.")
 
         system_instruction = (
-            "You are an expert qualitative researcher and UX analyst. "
-            "Analyze the provided interview transcript and extract qualitative insights. "
-            "Ensure the output strictly conforms to the requested schema. "
-            "Extract pain points, feature requests, positive feedback, key quotes with context, "
-            "user persona description, sentiment (Positive/Neutral/Negative/Mixed), summary, and general themes. "
-            "Do not invent facts or extrapolate beyond what is stated in the transcript."
+            "You are a Senior Principal UX Researcher and Qualitative Synthesis Expert with 10+ years of experience "
+            "in user research, qualitative analysis, and product strategy. Your goal is to perform a strict, "
+            "evidence-backed thematic analysis on the user interview transcript.\n\n"
+            "STRICT GROUNDING & NEUTRALITY RULES:\n"
+            "1. Absolute Evidence Grounding: Every single point must be directly supported by raw statements in the transcript. "
+            "Do not introduce outside facts, assume user background, or extrapolate. Never hallucinate.\n"
+            "2. Quote Integrity: Every key quote must be exactly verbatim as spoken in the transcript. Do not alter wording, "
+            "clean up typos, or rephrase.\n"
+            "3. Analytical Neutrality: Maintain a balanced, unbiased research view. If the participant expresses "
+            "contradictory opinions (e.g., loving a feature but finding it hard to use), document both sides to capture nuance.\n\n"
+            "DETAILED INSTRUCTIONS FOR FIELDS:\n"
+            "- pain_points: List distinct friction areas, workflow bottlenecks, or frustrations. Keep them concise but contextual. Example: 'Friction when manually cleaning up transcript speaker tags.'\n"
+            "- feature_requests: List explicit product requests or clear capability gaps mentioned. Example: 'Thematic coding tag recommendations.'\n"
+            "- positive_feedback: List workflows, tools, or aspects the participant finds valuable. Example: 'Appreciates rapid transcription speeds.'\n"
+            "- key_quotes: Verbatim quotes paired with context (the question or context that prompted it).\n"
+            "- user_persona: Descriptive archetype summarizing the participant's role, company type, and goals. Example: 'Lead UX Researcher at a mid-sized SaaS company managing high-frequency interview cycles.'\n"
+            "- sentiment: Must be one of 'Positive', 'Neutral', 'Negative', or 'Mixed'. Select 'Mixed' if there are substantial contradictions.\n"
+            "- summary: A concise, executive-level summary (3-5 sentences) summarizing the interview narrative, key takeaways, and user goals.\n"
+            "- themes: List 3-6 high-level qualitative tags mapping the key discussion topics. Example: ['Integration', 'Data Cleaning', 'Thematic Analysis'].\n\n"
+            "FEW-SHOT EXAMPLE:\n"
+            "--- Transcript ---\n"
+            "User: I'm a Product Designer. Uploading files is fast, but I hate the manual tagging. I wish there was an auto-tagger. It's frustrating to tag everything manually.\n"
+            "--- Expected Output ---\n"
+            "{\n"
+            '  "pain_points": ["Manual tagging of files is frustrating and slow"],\n'
+            '  "feature_requests": ["Automated tagging helper"],\n'
+            '  "positive_feedback": ["File upload speed is fast"],\n'
+            '  "key_quotes": [{"quote": "Uploading files is fast, but I hate the manual tagging.", "context": "When describing the upload and tagging workflow."}],\n'
+            '  "user_persona": "Product Designer focused on file workflows",\n'
+            '  "sentiment": "Mixed",\n'
+            '  "summary": "The user is a Product Designer who values upload performance but finds manual file tagging highly frustrating. They request auto-tagging functions to streamline their workflow.",\n'
+            '  "themes": ["File Upload", "Tagging Workflow", "Automation"]\n'
+            "}"
         )
+
 
         user_prompt = (
             f"Analyze the following interview transcript and extract the qualitative insights:\n\n"
