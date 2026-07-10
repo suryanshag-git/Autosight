@@ -30,6 +30,7 @@ class Settings(BaseSettings):
 
     # Google Gemini API configuration (placeholder for future use)
     GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-1.5-flash"
 
     model_config = SettingsConfigDict(
         env_file=".env",
