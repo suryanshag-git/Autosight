@@ -32,8 +32,18 @@ class InterviewProcessingService:
         2. Extracting qualitative insights from the interview transcript.
         3. Creating and saving the insight record linked to the interview.
         """
+        from app.ai.embeddings import generate_embedding
         interview_id = uuid4()
         now = datetime.now(timezone.utc)
+        
+        # Generate transcript embeddings
+        try:
+            logger.info("Generating embedding vector for interview transcript...")
+            embedding = await generate_embedding(payload.transcript)
+        except Exception as e:
+            logger.error(f"Failed to generate embedding during interview processing: {e}")
+            embedding = [0.0] * 768
+
 
         # Create database record model for the Interview
         interview_model = InterviewModel(
@@ -43,9 +53,11 @@ class InterviewProcessingService:
             participant_info=payload.participant_info,
             date=payload.date or now,
             metadata=payload.metadata,
+            embedding=embedding,
             created_at=now,
             updated_at=now
         )
+
 
         # 1. Save interview in database
         logger.info(f"Saving new interview {interview_id}...")

@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, use } from "react";
+
+
 import { 
   Plus, 
   Loader2, 
@@ -93,9 +95,22 @@ const INITIAL_INTERVIEWS: InterviewItem[] = [
   }
 ];
 
-export default function InterviewsPage() {
+export default function InterviewsPage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
+  const resolvedParams = use(searchParams);
+  const queryId = resolvedParams.id;
+
   const [interviews, setInterviews] = useState<InterviewItem[]>(INITIAL_INTERVIEWS);
   const [selectedId, setSelectedId] = useState<string>(INITIAL_INTERVIEWS[0].id);
+
+  useEffect(() => {
+    if (queryId) {
+      const exists = interviews.some((i) => i.id === queryId);
+      if (exists) {
+        setSelectedId(queryId);
+      }
+    }
+  }, [queryId, interviews]);
+
   const [title, setTitle] = useState("");
   const [transcript, setTranscript] = useState("");
   const [participantName, setParticipantName] = useState("");

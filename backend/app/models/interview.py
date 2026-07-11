@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field
 
@@ -14,6 +14,7 @@ class InterviewModel(BaseModel):
     participant_info: Optional[Dict[str, Any]] = Field(default=None, description="Demographic/job info about participant.")
     date: Optional[datetime] = Field(default=None, description="The date the interview took place.")
     metadata: Optional[Dict[str, Any]] = Field(default=None, description="Custom dictionary for any external platform metadata.")
+    embedding: Optional[List[float]] = Field(default=None, description="768-dimensional document vector embedding for semantic search.")
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="Timestamp of when the database record was created."
@@ -22,3 +23,4 @@ class InterviewModel(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="Timestamp of when the database record was last updated."
     )
+
