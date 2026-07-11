@@ -7,6 +7,17 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 
+const SearchResultSkeleton = () => (
+  <div className="border border-[#1f2937] bg-[#0b0f19]/20 p-4 rounded-xl animate-pulse space-y-3">
+    <div className="flex items-center justify-between">
+      <div className="h-4 bg-[#1f2937] rounded w-1/2"></div>
+      <div className="h-4 bg-[#1f2937] rounded w-16"></div>
+    </div>
+    <div className="h-3 bg-[#1f2937] rounded w-5/6"></div>
+    <div className="h-3 bg-[#1f2937] rounded w-2/3"></div>
+  </div>
+);
+
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -168,18 +179,31 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
         {/* Results Container */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {loading && (
-            <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-500">
-              <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
-              <p className="text-xs">Generating embeddings and scoring transcripts...</p>
+            <div className="space-y-3">
+              <SearchResultSkeleton />
+              <SearchResultSkeleton />
+              <SearchResultSkeleton />
             </div>
           )}
 
           {!loading && error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl flex gap-2 items-center text-xs">
-              <AlertCircle className="w-4 h-4" />
-              <p>{error} Rendering mock semantic highlights.</p>
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl flex flex-col gap-3 text-xs shadow-inner">
+              <div className="flex gap-2 items-center">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <p className="font-semibold">{error}</p>
+              </div>
+              <Button 
+                type="button" 
+                variant="destructive" 
+                size="sm"
+                className="w-fit"
+                onClick={() => handleSearch()}
+              >
+                Retry Search
+              </Button>
             </div>
           )}
+
 
           {!loading && results.length > 0 && (
             <div className="space-y-3">

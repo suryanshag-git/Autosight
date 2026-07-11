@@ -7,10 +7,12 @@ from app.schemas.base import BaseSchema
 class InterviewBase(BaseSchema):
     title: str = Field(
         ...,
+        min_length=3,
         description="The title of the interview session."
     )
     transcript: str = Field(
         ...,
+        min_length=15,
         description="The full raw text transcript of the interview."
     )
     participant_info: Optional[Dict[str, Any]] = Field(

@@ -22,7 +22,9 @@ import {
   Upload,
   FileText,
   Heart,
-  Scale
+  Scale,
+  Copy,
+  Check
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -106,6 +108,14 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
 
   const [interviews, setInterviews] = useState<InterviewItem[]>(INITIAL_INTERVIEWS);
   const [selectedId, setSelectedId] = useState<string>(INITIAL_INTERVIEWS[0].id);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  const handleCopyQuote = (quoteText: string, index: number) => {
+    navigator.clipboard.writeText(quoteText);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
 
   useEffect(() => {
     if (queryId) {
@@ -286,9 +296,9 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 h-full overflow-hidden max-w-7xl mx-auto w-full">
+    <div className="flex flex-col lg:flex-row gap-8 h-full lg:overflow-hidden max-w-7xl mx-auto w-full">
       {/* Left Column: Form + List */}
-      <div className="flex-1 flex flex-col gap-6 overflow-y-auto pr-2 max-w-md w-full shrink-0">
+      <div className="flex-1 flex flex-col gap-6 lg:overflow-y-auto pr-2 max-w-md w-full shrink-0">
         
         {/* Upload Form Card */}
         <Card>
@@ -494,7 +504,7 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
       </div>
 
       {/* Right Column: Evidence Panel */}
-      <div className="flex-1 bg-[#111827] border border-[#1f2937] rounded-2xl flex flex-col overflow-hidden h-[85vh]">
+      <div className="flex-1 bg-[#111827] border border-[#1f2937] rounded-2xl flex flex-col overflow-hidden lg:h-[85vh] h-auto">
         {selectedInterview ? (
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Evidence Header */}
@@ -655,9 +665,22 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
                     {selectedInterview.insight.key_quotes.map((q, i) => (
                       <Card key={i} className="bg-[#0b0f19]/30 border border-[#1f2937]">
                         <CardContent className="p-5 space-y-3">
-                          <p className="text-sm italic text-gray-200 leading-relaxed font-serif pl-3 border-l-2 border-[#6366f1]/60">
-                            "{q.quote}"
-                          </p>
+                          <div className="flex items-start justify-between gap-4">
+                            <p className="text-sm italic text-gray-200 leading-relaxed font-serif pl-3 border-l-2 border-[#6366f1]/60 flex-1">
+                              "{q.quote}"
+                            </p>
+                            <button
+                              onClick={() => handleCopyQuote(q.quote, i)}
+                              className="text-gray-500 hover:text-white p-1.5 rounded-lg border border-[#1f2937] bg-[#111827] hover:bg-[#1f2937] transition-all duration-200 cursor-pointer shrink-0"
+                              title="Copy quote to clipboard"
+                            >
+                              {copiedIndex === i ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
                           <Separator />
                           <div className="flex items-center justify-between text-[10px] text-gray-500 font-semibold pt-1">
                             <span>Grounding Context: {q.context}</span>
@@ -666,6 +689,7 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
                         </CardContent>
                       </Card>
                     ))}
+
                   </div>
                 </div>
               )}
