@@ -146,4 +146,24 @@ async def search_interviews(payload: SearchRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
 
+from app.ai.clustering import ThemeClusteringService, ClusteredTheme
+
+@app.get(
+    f"{settings.API_V1_STR}/themes",
+    response_model=list[ClusteredTheme],
+    tags=["Themes"]
+)
+async def get_clustered_themes():
+    """
+    Exposes theme clusters computed across all uploaded interview transcripts.
+    Uses in-memory cache to guarantee sub-millisecond response latency.
+    """
+    try:
+        service = ThemeClusteringService()
+        themes = await service.get_clustered_themes()
+        return themes
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Theme clustering failed: {str(e)}")
+
+
 

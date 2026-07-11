@@ -119,4 +119,12 @@ class InterviewProcessingService:
         logger.info(f"Saving extracted insights {insight_id} for interview {interview_id}...")
         saved_insight = await self.insight_repo.create(insight_model)
 
+        # Invalidate theme clustering cache on new interview creations
+        try:
+            from app.ai.clustering import clear_themes_cache
+            clear_themes_cache()
+        except Exception as e:
+            logger.warning(f"Failed to clear theme cache: {e}")
+
         return saved_interview, saved_insight
+

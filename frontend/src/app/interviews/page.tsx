@@ -2,6 +2,9 @@
 
 import React, { useState, useRef, useEffect, use } from "react";
 
+import { useRouter } from "next/navigation";
+
+
 
 import { 
   Plus, 
@@ -95,9 +98,11 @@ const INITIAL_INTERVIEWS: InterviewItem[] = [
   }
 ];
 
-export default function InterviewsPage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
+export default function InterviewsPage({ searchParams }: { searchParams: Promise<{ id?: string; theme?: string }> }) {
   const resolvedParams = use(searchParams);
   const queryId = resolvedParams.id;
+  const queryTheme = resolvedParams.theme;
+  const router = useRouter();
 
   const [interviews, setInterviews] = useState<InterviewItem[]>(INITIAL_INTERVIEWS);
   const [selectedId, setSelectedId] = useState<string>(INITIAL_INTERVIEWS[0].id);
@@ -110,6 +115,14 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
       }
     }
   }, [queryId, interviews]);
+
+  const visibleInterviews = interviews.filter((item) => {
+    if (!queryTheme) return true;
+    return item.insight.themes.some(
+      (t) => t.toLowerCase() === queryTheme.toLowerCase()
+    );
+  });
+
 
   const [title, setTitle] = useState("");
   const [transcript, setTranscript] = useState("");
@@ -404,15 +417,30 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
 
         {/* Interviews List */}
         <div className="space-y-3">
-          <h3 className="text-xs text-gray-400 font-bold uppercase tracking-wider px-2">Processed Sessions</h3>
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-xs text-gray-400 font-bold uppercase tracking-wider">Processed Sessions</h3>
+            {queryTheme && (
+              <Badge 
+                variant="secondary" 
+                className="cursor-pointer hover:bg-red-500/10 hover:text-red-400 gap-1 text-[10px]"
+                onClick={() => router.push("/interviews")}
+              >
+                Theme: {queryTheme} ×
+              </Badge>
+            )}
+          </div>
           <div className="space-y-2">
-            {interviews.map((item) => {
-              const active = item.id === selectedId;
-              const dateObj = new Date(item.date);
-              const formattedDate = dateObj.toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric"
-              });
+            {visibleInterviews.length === 0 ? (
+              <p className="text-gray-500 text-xs text-center py-6">No sessions match this theme.</p>
+            ) : (
+              visibleInterviews.map((item) => {
+                const active = item.id === selectedId;
+                const dateObj = new Date(item.date);
+                const formattedDate = dateObj.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric"
+                });
+
 
               return (
                 <button
@@ -458,8 +486,10 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
                   </div>
                 </button>
               );
-            })}
+            })
+            )}
           </div>
+
         </div>
       </div>
 

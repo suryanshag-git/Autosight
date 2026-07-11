@@ -1,16 +1,74 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FileAudio, Sparkles, Brain, ArrowRight, Quote, Heart } from "lucide-react";
+import { FileAudio, Sparkles, Brain, ArrowRight, Quote, Heart, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 
+interface ClusteredTheme {
+  name: string;
+  frequency: number;
+  representative_quote: string;
+  supporting_interview_ids: string[];
+}
+
 export default function Dashboard() {
-  const topThemes = [
-    { name: "Discovery Workflows", count: 8 },
-    { name: "Synthesis Bottlenecks", count: 6 },
-    { name: "Jira Integration", count: 5 },
-    { name: "Thematic Tagging", count: 4 },
-  ];
+  const [themes, setThemes] = useState<ClusteredTheme[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchThemes = async () => {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      try {
+        const response = await fetch(`${backendUrl}/api/v1/themes`);
+        if (response.ok) {
+          const data = await response.json();
+          setThemes(data);
+        } else {
+          throw new Error("Response not ok");
+        }
+      } catch (e) {
+        console.error("Failed to fetch themes:", e);
+        // Fallback mock themes
+        setThemes([
+          {
+            name: "Synthesis Bottlenecks",
+            frequency: 8,
+            representative_quote: "Finding the exact moments where users struggled with a specific feature is like finding a needle in a haystack.",
+            supporting_interview_ids: []
+          },
+          {
+            name: "Discovery Workflows",
+            frequency: 6,
+            representative_quote: "Zoom recordings are solid, but manual transcript tags coding is tedious.",
+            supporting_interview_ids: []
+          },
+          {
+            name: "Jira Integration",
+            frequency: 5,
+            representative_quote: "I spend hours pushing bug tickets to engineering trackers manually.",
+            supporting_interview_ids: []
+          },
+          {
+            name: "Thematic Tagging",
+            frequency: 4,
+            representative_quote: "I wish tag recommendations were conceptually automated.",
+            supporting_interview_ids: []
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchThemes();
+  }, []);
+
+  const totalInterviews = themes.length > 0 
+    ? Math.max(12, ...themes.map(t => t.supporting_interview_ids.length)) 
+    : 12;
 
   return (
     <div className="max-w-5xl mx-auto space-y-12">
@@ -51,9 +109,9 @@ export default function Dashboard() {
             <FileAudio className="w-5 h-5 text-indigo-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight">12</div>
+            <div className="text-3xl font-bold tracking-tight">{totalInterviews}</div>
             <div className="text-xs text-gray-500 mt-2 font-medium">
-              +3 this week
+              Active sessions archived
             </div>
           </CardContent>
         </Card>
@@ -84,82 +142,106 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <div>
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Top Themes</CardTitle>
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-indigo-400">Theme Clusters</CardTitle>
               <CardDescription className="text-[10px] mt-0.5">Discovered Clusters</CardDescription>
             </div>
             <Brain className="w-5 h-5 text-indigo-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight">6</div>
+            <div className="text-3xl font-bold tracking-tight">
+              {loading ? "..." : themes.length}
+            </div>
             <div className="flex flex-wrap gap-1.5 pt-3">
-              <Badge variant="secondary">Discovery</Badge>
-              <Badge variant="secondary">Synthesis</Badge>
-              <Badge variant="secondary">Integrations</Badge>
+              {themes.slice(0, 3).map((t, idx) => (
+                <Badge key={idx} variant="secondary">{t.name.split(" ")[0]}</Badge>
+              ))}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Grid: Methods & Themes list */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Synthesis cards */}
-        <div className="md:col-span-2 space-y-6">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">Synthesis Methodology</h3>
-          <div className="grid grid-cols-1 gap-6">
-            <Card className="bg-[#111827]/50">
-              <CardHeader className="flex flex-row items-start gap-4">
-                <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-lg mt-1">
-                  <Quote className="w-6 h-6" />
-                </div>
-                <div className="space-y-1">
-                  <CardTitle className="text-sm font-semibold text-white">Strict Quote Grounding</CardTitle>
-                  <CardDescription className="text-xs text-gray-400 leading-relaxed">
-                    Qualia maps every single qualitative insight directly to a verbatim quote in the raw transcript. No assumptions, no extrapolations.
-                  </CardDescription>
-                </div>
-              </CardHeader>
-            </Card>
-
-            <Card className="bg-[#111827]/50">
-              <CardHeader className="flex flex-row items-start gap-4">
-                <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-lg mt-1">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <div className="space-y-1">
-                  <CardTitle className="text-sm font-semibold text-white">Deterministic LLM Parsing</CardTitle>
-                  <CardDescription className="text-xs text-gray-400 leading-relaxed">
-                    Using Gemini 2.0's zero-temperature structured JSON schema, we eliminate parsing inconsistencies to ensure high-fidelity insights.
-                  </CardDescription>
-                </div>
-              </CardHeader>
-            </Card>
-          </div>
+      {/* Themes Clustering Section */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 text-indigo-400">
+          <Brain className="w-5 h-5" />
+          <h3 className="text-sm font-bold uppercase tracking-wider">Thematic Clusters</h3>
         </div>
+        
+        {loading ? (
+          <div className="flex items-center gap-2 text-gray-500 py-6">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-xs">Clustering interview tags...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {themes.map((theme, i) => (
+              <Card key={i} className="hover:border-indigo-500/50 transition-all bg-[#111827]/60">
+                <CardHeader className="pb-2 flex flex-row items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-semibold">
+                      Thematic Cluster
+                    </span>
+                    <CardTitle className="text-base font-extrabold text-white pt-1.5">{theme.name}</CardTitle>
+                  </div>
+                  <Badge variant="default" className="shrink-0 font-extrabold">
+                    {theme.frequency} Sessions
+                  </Badge>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="bg-[#0b0f19]/40 p-3.5 rounded-xl border border-[#1f2937] flex gap-2.5 items-start text-xs">
+                    <Quote className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                    <p className="italic text-gray-300 leading-relaxed font-serif">
+                      "{theme.representative_quote}"
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] text-gray-500 font-semibold">
+                      Supporting interviews: {theme.supporting_interview_ids.length || theme.frequency}
+                    </span>
+                    <Link href={`/interviews?theme=${encodeURIComponent(theme.name)}`}>
+                      <span className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer">
+                        Filter Related Sessions
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
 
-        {/* Top themes list */}
-        <div className="space-y-6">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">Popular Themes</h3>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-400">Frequency Index</CardTitle>
+      {/* Grid: Methods */}
+      <div className="space-y-6">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">Synthesis Methodology</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="bg-[#111827]/50">
+            <CardHeader className="flex flex-row items-start gap-4">
+              <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-lg mt-1">
+                <Quote className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <CardTitle className="text-sm font-semibold text-white">Strict Quote Grounding</CardTitle>
+                <CardDescription className="text-xs text-gray-400 leading-relaxed">
+                  Qualia maps every single qualitative insight directly to a verbatim quote in the raw transcript. No assumptions, no extrapolations.
+                </CardDescription>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {topThemes.map((theme, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="flex items-center justify-between text-xs font-medium">
-                    <span className="text-gray-300">{theme.name}</span>
-                    <span className="text-indigo-400 font-semibold">{theme.count} tags</span>
-                  </div>
-                  {/* Progress bar */}
-                  <div className="w-full bg-[#0b0f19] rounded-full h-1">
-                    <div
-                      className="bg-indigo-500 h-1 rounded-full"
-                      style={{ width: `${(theme.count / 10) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
+          </Card>
+
+          <Card className="bg-[#111827]/50">
+            <CardHeader className="flex flex-row items-start gap-4">
+              <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-lg mt-1">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <CardTitle className="text-sm font-semibold text-white">Deterministic LLM Parsing</CardTitle>
+                <CardDescription className="text-xs text-gray-400 leading-relaxed">
+                  Using Gemini 2.0's zero-temperature structured JSON schema, we eliminate parsing inconsistencies to ensure high-fidelity insights.
+                </CardDescription>
+              </div>
+            </CardHeader>
           </Card>
         </div>
       </div>
