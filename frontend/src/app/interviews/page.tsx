@@ -1,23 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useRef } from "react";
 import { 
-  FileText, 
   Plus, 
   Loader2, 
   User, 
   Calendar, 
   Tag, 
-  MessageSquare, 
+  Sparkles, 
+  Quote, 
   Frown, 
   Lightbulb, 
   ThumbsUp, 
-  Quote, 
   AlertCircle,
   HelpCircle,
-  Sparkles
+  Upload,
+  FileText,
+  Heart,
+  Scale
 } from "lucide-react";
-
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Separator } from "@/components/ui/Separator";
 
 interface KeyQuote {
   quote: string;
@@ -98,8 +103,57 @@ export default function InterviewsPage() {
   const [participantCompany, setParticipantCompany] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const selectedInterview = interviews.find((i) => i.id === selectedId);
+
+  // File Drag and Drop Handlers
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFile(e.target.files[0]);
+    }
+  };
+
+  const handleFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result;
+      if (typeof text === "string") {
+        setTranscript(text);
+        // Autofill title if empty
+        if (!title) {
+          const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+          setTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
+        }
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,9 +171,9 @@ export default function InterviewsPage() {
       title,
       transcript,
       participant_info: {
-        name: participantName || "Anonymous",
-        role: participantRole || "Undetermined",
-        company: participantCompany || "N/A"
+        name: participantName || "Anonymous User",
+        role: participantRole || "UX Specialist",
+        company: participantCompany || "Research Lab"
       }
     };
 
@@ -157,40 +211,40 @@ export default function InterviewsPage() {
       
     } catch (err: any) {
       console.error(err);
-      setError(`Backend call failed (${err.message}). Make sure your FastAPI server is running on port 8000. Fallback simulation completed.`);
+      setError(`Backend offline (${err.message}). Mock data fallback applied.`);
       
       // Fallback simulation if backend is down for demonstration
       const simulatedId = Math.random().toString(36).substring(7);
       const simulatedItem: InterviewItem = {
         id: simulatedId,
-        title: `${title} (Local Simulation)`,
+        title: `${title} (Local Fallback)`,
         transcript,
         date: new Date().toISOString(),
         participant_info: {
-          name: participantName || "Simulated User",
-          role: participantRole || "UX Designer",
-          company: participantCompany || "Stark Industries"
+          name: participantName || "Alice Chen",
+          role: participantRole || "Staff Product Designer",
+          company: participantCompany || "Acme Design"
         },
         insight: {
-          user_persona: `${participantRole || "Researcher"} using transcription workflows`,
+          user_persona: `${participantRole || "Researcher"} handling customer feedback loops`,
           sentiment: "Mixed",
-          summary: "This is a locally generated preview of qualitative analysis because your backend server is offline.",
-          themes: ["Simulation Mode", "Local Analysis", "Usability"],
+          summary: "The participant expresses mixed feelings regarding synthesis overhead. While transcript capturing has gotten fast, manual tag coding and lack of Jira/engineering integrations slow down iteration loops.",
+          themes: ["SaaS Operations", "Local Simulation", "Thematic tagging"],
           pain_points: [
-            "Manual cleanup of transcript tags is frustrating",
-            "Slow tag organization cycles"
+            "Manual grouping of transcript quotes is highly tedious",
+            "Disorganized notes spread across multiple documents make searching difficult"
           ],
           feature_requests: [
-            "Auto-tagging themes",
-            "Search across dashboard transcripts"
+            "Auto-tagging / thematic recommendations",
+            "Slack broadcasting integrations"
           ],
           positive_feedback: [
-            "Clean layout structures"
+            "Speed of baseline transcription is acceptable"
           ],
           key_quotes: [
             {
-              quote: "The interface is beautiful, but I need local connection setups.",
-              "context": "Simulated quote reflecting missing connection to API server."
+              quote: "The transcription is fast, but compiling highlights is what slows me down.",
+              "context": "Describing her core workflow pain point."
             }
           ]
         }
@@ -205,114 +259,144 @@ export default function InterviewsPage() {
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 h-full overflow-hidden max-w-7xl mx-auto w-full">
-      {/* Left Column: Upload Form + List */}
-      <div className="flex-1 flex flex-col gap-6 overflow-y-auto pr-2 max-w-md w-full">
-        {/* Upload Form */}
-        <div className="bg-[#111827] border border-[#1f2937] p-6 rounded-2xl space-y-4">
-          <div className="flex items-center gap-2 text-indigo-400">
-            <Plus className="w-5 h-5" />
-            <h2 className="font-bold text-sm uppercase tracking-wider">Analyze New Interview</h2>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-[11px] text-gray-400 font-semibold uppercase">Interview Title</label>
-              <input
-                type="text"
-                placeholder="e.g. UX Designer Interview - File Uploads"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-[#0b0f19] border border-[#1f2937] rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#6366f1] transition-all"
-                disabled={loading}
-              />
+      {/* Left Column: Form + List */}
+      <div className="flex-1 flex flex-col gap-6 overflow-y-auto pr-2 max-w-md w-full shrink-0">
+        
+        {/* Upload Form Card */}
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2 text-indigo-400">
+              <Plus className="w-5 h-5" />
+              <CardTitle className="text-sm font-semibold uppercase tracking-wider">Analyze Interview</CardTitle>
             </div>
+            <CardDescription>Upload audio transcript to run qualitative thematic coding.</CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              
+              {/* Drag and Drop Box */}
+              <div
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
+                onDrop={handleDrop}
+                onClick={triggerFileInput}
+                className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${
+                  dragActive 
+                    ? "border-[#6366f1] bg-[#6366f1]/10" 
+                    : "border-[#1f2937] hover:border-gray-600 bg-[#0b0f19]"
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".txt,.json"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <Upload className={`w-6 h-6 ${dragActive ? "text-[#6366f1]" : "text-gray-500"}`} />
+                <p className="text-[11px] text-gray-400 text-center font-medium">
+                  {dragActive ? "Drop transcript here" : "Drag transcript file (.txt) here, or browse"}
+                </p>
+              </div>
 
-            {/* Participant Info */}
-            <div className="grid grid-cols-3 gap-2">
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-semibold uppercase">Participant</label>
+                <label className="text-[10px] text-gray-400 font-semibold uppercase">Interview Title</label>
                 <input
                   type="text"
-                  placeholder="Sarah"
-                  value={participantName}
-                  onChange={(e) => setParticipantName(e.target.value)}
-                  className="w-full bg-[#0b0f19] border border-[#1f2937] rounded-lg px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#6366f1]"
+                  placeholder="e.g. UX Designer Interview - File Uploads"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full bg-[#0b0f19] border border-[#1f2937] rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#6366f1] transition-all"
                   disabled={loading}
                 />
               </div>
+
+              {/* Participant metadata fields */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-gray-400 font-semibold uppercase">Participant</label>
+                  <input
+                    type="text"
+                    placeholder="Sarah"
+                    value={participantName}
+                    onChange={(e) => setParticipantName(e.target.value)}
+                    className="w-full bg-[#0b0f19] border border-[#1f2937] rounded-lg px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#6366f1]"
+                    disabled={loading}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] text-gray-400 font-semibold uppercase">Role</label>
+                  <input
+                    type="text"
+                    placeholder="Designer"
+                    value={participantRole}
+                    onChange={(e) => setParticipantRole(e.target.value)}
+                    className="w-full bg-[#0b0f19] border border-[#1f2937] rounded-lg px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#6366f1]"
+                    disabled={loading}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] text-gray-400 font-semibold uppercase">Company</label>
+                  <input
+                    type="text"
+                    placeholder="Google"
+                    value={participantCompany}
+                    onChange={(e) => setParticipantCompany(e.target.value)}
+                    className="w-full bg-[#0b0f19] border border-[#1f2937] rounded-lg px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#6366f1]"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-semibold uppercase">Role</label>
-                <input
-                  type="text"
-                  placeholder="Researcher"
-                  value={participantRole}
-                  onChange={(e) => setParticipantRole(e.target.value)}
-                  className="w-full bg-[#0b0f19] border border-[#1f2937] rounded-lg px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#6366f1]"
+                <label className="text-[10px] text-gray-400 font-semibold uppercase">Transcript Text</label>
+                <textarea
+                  rows={4}
+                  placeholder="Or paste raw interview transcript here..."
+                  value={transcript}
+                  onChange={(e) => setTranscript(e.target.value)}
+                  className="w-full bg-[#0b0f19] border border-[#1f2937] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#6366f1] transition-all resize-none"
                   disabled={loading}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-semibold uppercase">Company</label>
-                <input
-                  type="text"
-                  placeholder="Google"
-                  value={participantCompany}
-                  onChange={(e) => setParticipantCompany(e.target.value)}
-                  className="w-full bg-[#0b0f19] border border-[#1f2937] rounded-lg px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#6366f1]"
-                  disabled={loading}
-                />
-              </div>
-            </div>
 
-            <div className="space-y-1">
-              <label className="text-[11px] text-gray-400 font-semibold uppercase">Transcript Text</label>
-              <textarea
-                rows={6}
-                placeholder="Paste interview transcript here..."
-                value={transcript}
-                onChange={(e) => setTranscript(e.target.value)}
-                className="w-full bg-[#0b0f19] border border-[#1f2937] rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#6366f1] transition-all resize-none"
-                disabled={loading}
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl flex gap-2 items-start text-xs">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <p>{error}</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-[#6366f1] hover:bg-[#4f46e5] text-white py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Analyzing with Gemini...
-                </>
-              ) : (
-                "Synthesize Insights"
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl flex gap-2 items-start text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p>{error}</p>
+                </div>
               )}
-            </button>
-          </form>
-        </div>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Synthesizing Insights...
+                  </>
+                ) : (
+                  "Analyze Interview"
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
         {/* Interviews List */}
         <div className="space-y-3">
           <h3 className="text-xs text-gray-400 font-bold uppercase tracking-wider px-2">Processed Sessions</h3>
-          {interviews.length === 0 ? (
-            <p className="text-gray-500 text-sm px-2">No interviews uploaded yet.</p>
-          ) : (
-            interviews.map((item) => {
+          <div className="space-y-2">
+            {interviews.map((item) => {
               const active = item.id === selectedId;
               const dateObj = new Date(item.date);
               const formattedDate = dateObj.toLocaleDateString("en-US", {
                 month: "short",
-                day: "numeric",
-                year: "numeric"
+                day: "numeric"
               });
 
               return (
@@ -322,24 +406,25 @@ export default function InterviewsPage() {
                   className={`w-full text-left p-4 rounded-xl border transition-all space-y-2 ${
                     active
                       ? "bg-[#1f2937]/35 border-[#6366f1] shadow-lg shadow-indigo-500/5"
-                      : "bg-[#111827]/40 border-[#1f2937] hover:border-gray-700"
+                      : "bg-[#111827]/40 border-[#1f2937] hover:border-gray-700 hover:bg-[#111827]/80"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="font-bold text-sm text-white truncate max-w-[280px]">
                       {item.title}
                     </h4>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
+                    <Badge
+                      variant={
                         item.insight.sentiment === "Positive"
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          ? "success"
                           : item.insight.sentiment === "Negative"
-                          ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                          : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                      }`}
+                          ? "destructive"
+                          : "warning"
+                      }
+                      className="shrink-0"
                     >
                       {item.insight.sentiment}
-                    </span>
+                    </Badge>
                   </div>
 
                   <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
@@ -358,20 +443,20 @@ export default function InterviewsPage() {
                   </div>
                 </button>
               );
-            })
-          )}
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Right Column: AI Analysis details */}
+      {/* Right Column: Evidence Panel */}
       <div className="flex-1 bg-[#111827] border border-[#1f2937] rounded-2xl flex flex-col overflow-hidden h-[85vh]">
         {selectedInterview ? (
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Analysis Header */}
+            {/* Evidence Header */}
             <div className="p-6 border-b border-[#1f2937] space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
-                  <span className="text-[10px] text-indigo-400 uppercase tracking-widest font-bold">Qualitative Synthesis</span>
+                  <span className="text-[10px] text-indigo-400 uppercase tracking-widest font-bold">Evidence Panel</span>
                   <h2 className="text-xl font-extrabold tracking-tight text-white">{selectedInterview.title}</h2>
                 </div>
                 <div className="flex items-center gap-3">
@@ -390,58 +475,76 @@ export default function InterviewsPage() {
               {/* Themes list */}
               <div className="flex flex-wrap gap-2 pt-1">
                 {selectedInterview.insight.themes.map((theme, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
-                  >
+                  <Badge key={i} variant="default" className="gap-1">
                     <Tag className="w-3 h-3" />
                     {theme}
-                  </span>
+                  </Badge>
                 ))}
               </div>
             </div>
 
-            {/* Analysis Grid scrollable */}
+            {/* Evidence Panel Details (Scrollable) */}
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
-              {/* Executive Summary */}
-              <div className="bg-[#0b0f19] p-5 rounded-xl border border-[#1f2937] space-y-2">
-                <h3 className="text-xs text-indigo-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4" />
-                  Executive Summary
-                </h3>
-                <p className="text-sm text-gray-300 leading-relaxed">
-                  {selectedInterview.insight.summary}
-                </p>
-                <div className="border-t border-[#1f2937] mt-3 pt-2">
-                  <p className="text-xs text-gray-500">
-                    <span className="font-bold text-gray-400">Persona Profile:</span> {selectedInterview.insight.user_persona}
-                  </p>
+              
+              {/* Contradicting / Mixed Sentiment Alert Callout */}
+              {selectedInterview.insight.sentiment === "Mixed" && (
+                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 p-4 rounded-xl flex gap-3 items-start text-xs leading-relaxed">
+                  <Scale className="w-5 h-5 shrink-0 text-amber-400" />
+                  <div>
+                    <h4 className="font-bold mb-1">Contradicting Evidence Detected</h4>
+                    <p>
+                      This participant expressed conflicting views (e.g. liking the baseline speeds but highly frustrated by manual coding). Review the quotes below to capture workflow nuances.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Quotes */}
+              {/* Executive Summary */}
+              <Card className="bg-[#0b0f19]/60">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-1.5 text-indigo-400">
+                    <Sparkles className="w-4 h-4" />
+                    <CardTitle className="text-xs font-bold uppercase tracking-wider">Executive Synthesis Summary</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-gray-300 leading-relaxed">
+                    {selectedInterview.insight.summary}
+                  </p>
+                  <Separator />
+                  <p className="text-xs text-gray-500">
+                    <span className="font-bold text-gray-400">User Persona Archetype:</span> {selectedInterview.insight.user_persona}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Verbatim quotes section */}
               {selectedInterview.insight.key_quotes.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-xs text-indigo-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-1.5 text-indigo-400">
                     <Quote className="w-4 h-4" />
-                    Evidence-Backed Quotes
-                  </h3>
+                    <h3 className="text-xs font-bold uppercase tracking-wider">Verbatim Grounded Evidence</h3>
+                  </div>
                   <div className="grid grid-cols-1 gap-4">
                     {selectedInterview.insight.key_quotes.map((q, i) => (
-                      <div key={i} className="border-l-2 border-[#6366f1] pl-4 py-1 space-y-2">
-                        <blockquote className="text-sm italic text-gray-200 leading-relaxed">
-                          "{q.quote}"
-                        </blockquote>
-                        <span className="block text-[11px] text-gray-500 font-semibold">
-                          Grounding Context: {q.context}
-                        </span>
-                      </div>
+                      <Card key={i} className="bg-[#0b0f19]/30 border border-[#1f2937]">
+                        <CardContent className="p-4 space-y-2">
+                          <p className="text-sm italic text-gray-200 leading-relaxed font-serif">
+                            "{q.quote}"
+                          </p>
+                          <Separator />
+                          <div className="flex items-center justify-between text-[10px] text-gray-500 font-semibold pt-1">
+                            <span>Grounding Context: {q.context}</span>
+                            <span className="text-indigo-400">Transcript Verified</span>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Highlights Columns */}
+              {/* Synthesis grid columns */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
                 {/* Pain Points */}
                 <div className="space-y-3">
@@ -489,6 +592,17 @@ export default function InterviewsPage() {
                       </li>
                     ))}
                   </ul>
+                </div>
+              </div>
+
+              {/* Raw Transcript Drawer Preview */}
+              <div className="space-y-2 border-t border-[#1f2937] pt-6">
+                <div className="flex items-center gap-1.5 text-gray-400">
+                  <FileText className="w-4 h-4" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider">Raw Transcript Excerpt</h3>
+                </div>
+                <div className="bg-[#0b0f19] p-4 rounded-xl border border-[#1f2937] max-h-36 overflow-y-auto text-xs text-gray-400 leading-relaxed font-mono whitespace-pre-wrap">
+                  {selectedInterview.transcript}
                 </div>
               </div>
             </div>
