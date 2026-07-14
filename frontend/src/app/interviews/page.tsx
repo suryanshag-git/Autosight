@@ -108,27 +108,55 @@ const extractTitleFromTranscript = (text: string): string => {
   if (!text) return "";
   const lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
   if (lines.length === 0) return "";
-  
-  // 1. Try to find "Study: ..." or "Session: ..." or similar metadata in the first 10 lines
-  for (let i = 0; i < Math.min(10, lines.length); i++) {
-    const line = lines[i];
-    if (/^(study|session|title|project|interview)\s*:\s*/i.test(line)) {
-      return line.replace(/^(study|session|title|project|interview)\s*:\s*/i, "").trim();
+
+  // 1. Check first 15 lines for clear metadata prefixes (e.g. "Title: Sarah Interview")
+  const metadataRegex = /^(title|session|study|interview|subject|topic|participant|name|project|user)\s*:\s*(.+)$/i;
+  for (let i = 0; i < Math.min(15, lines.length); i++) {
+    const match = lines[i].match(metadataRegex);
+    if (match && match[2].trim().length > 2) {
+      return match[2].trim().replace(/^[=\-*#\s"']+|[=\-*#\s"']+$/g, "");
     }
   }
-  
-  // 2. Try to find the first line that looks like a title/heading (non-empty, not decoration)
-  for (let i = 0; i < Math.min(5, lines.length); i++) {
+
+  // 2. Look for Markdown headers (e.g., "# Sarah Discovery Session") in first 10 lines
+  for (let i = 0; i < Math.min(10, lines.length); i++) {
     const line = lines[i];
-    const cleaned = line.replace(/^[=\-*#\s]+|[=\-*#\s]+$/g, "").trim();
-    if (cleaned && cleaned.length > 3 && !cleaned.toLowerCase().includes("transcript") && cleaned.length < 80) {
+    if (line.startsWith("#")) {
+      const cleanedHeader = line.replace(/^[#\s]+|[#\s]+$/g, "").trim();
+      if (cleanedHeader.length > 3 && !cleanedHeader.toLowerCase().includes("transcript")) {
+        return cleanedHeader;
+      }
+    }
+  }
+
+  // 3. Heuristic search: find the first line that is NOT a speaker dialog line and has reasonable length
+  for (let i = 0; i < Math.min(10, lines.length); i++) {
+    const line = lines[i];
+    const cleaned = line.replace(/^[=\-*#\s"']+|[=\-*#\s"']+$/g, "").trim();
+    
+    // Skip line if it is empty, too short, or contains "transcript" keyword
+    if (!cleaned || cleaned.length < 4 || cleaned.toLowerCase().includes("transcript")) {
+      continue;
+    }
+
+    // Skip if it looks like a dialog line: "Speaker: ..." or "Interviewer: ..."
+    const dialogMatch = cleaned.match(/^([a-zA-Z0-9\s]{2,20})\s*:\s*(.+)$/);
+    if (dialogMatch) {
+      const dialogText = dialogMatch[2].trim();
+      if (dialogText.length < 15 || /^(hi|hello|yes|no|thanks|ok|good morning)/i.test(dialogText)) {
+        continue;
+      }
+    }
+
+    // If the line is short enough to be a title
+    if (cleaned.length < 80) {
       return cleaned;
     }
   }
 
-  // 3. Fallback to the first line stripped of decor
+  // 4. Ultimate fallback: clean the first line, slice if too long
   const firstLine = lines[0];
-  const cleanedFirst = firstLine.replace(/^[=\-*#\s]+|[=\-*#\s]+$/g, "").trim();
+  const cleanedFirst = firstLine.replace(/^[=\-*#\s"']+|[=\-*#\s"']+$/g, "").trim();
   if (cleanedFirst) {
     return cleanedFirst.length > 60 ? cleanedFirst.slice(0, 57) + "..." : cleanedFirst;
   }
@@ -630,10 +658,18 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
 
 
               return (
-                <button
+                <div
                   key={item.id}
                   onClick={() => setSelectedId(item.id)}
-                  className={`w-full text-left p-4 rounded-xl border transition-all space-y-2 ${
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedId(item.id);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className={`w-full text-left p-4 rounded-xl border transition-all space-y-2 cursor-pointer focus:outline-none focus:border-[#6366f1] ${
                     active
                       ? "bg-[#1f2937]/35 border-[#6366f1] shadow-lg shadow-indigo-500/5"
                       : "bg-[#111827]/40 border-[#1f2937] hover:border-gray-700 hover:bg-[#111827]/80"
@@ -682,7 +718,7 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
                       {formattedDate}
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })
             )}
