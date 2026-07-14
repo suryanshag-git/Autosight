@@ -1,10 +1,9 @@
 import logging
 import asyncio
-import google.generativeai as genai
-from google.generativeai.types import GenerationConfig
+from google.genai import types
 from app.schemas.insight import InsightExtraction
 from app.core.config import settings
-from app.ai.gemini import configure_gemini
+from app.ai.gemini import get_gemini_client
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +15,7 @@ class TranscriptExtractor:
     def __init__(self, model_name: str = None) -> None:
         self.model_name = model_name or settings.GEMINI_MODEL
         # Re-ensure Gemini client config is loaded
-        configure_gemini()
+        get_gemini_client()
 
     async def extract_insights(self, transcript: str, max_retries: int = 3) -> InsightExtraction:
         """
@@ -76,25 +75,23 @@ class TranscriptExtractor:
             f"TRANSCRIPT:\n{transcript}"
         )
 
-        # Configure structured output settings using the InsightExtraction schema
-        generation_config = GenerationConfig(
-            response_mime_type="application/json",
-            response_schema=InsightExtraction,
-            temperature=0.0,  # Zero temperature for deterministic extractions
-        )
-
-        model = genai.GenerativeModel(
-            model_name=self.model_name,
-            generation_config=generation_config,
-            system_instruction=system_instruction
-        )
+        client = get_gemini_client()
 
         for attempt in range(1, max_retries + 1):
             try:
                 logger.info(f"Extracting insights using Gemini {self.model_name} (Attempt {attempt}/{max_retries})...")
                 
                 # Trigger async content generation
-                response = await model.generate_content_async(user_prompt)
+                response = await client.aio.models.generate_content(
+                    model=self.model_name,
+                    contents=user_prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=0.0,
+                        response_mime_type="application/json",
+                        response_schema=InsightExtraction,
+                    )
+                )
                 
                 response_text = response.text
                 if not response_text:

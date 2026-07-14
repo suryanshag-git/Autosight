@@ -1,7 +1,7 @@
-import google.generativeai as genai
+from google.genai import types
 import logging
 from app.core.config import settings
-from app.ai.gemini import configure_gemini
+from app.ai.gemini import get_gemini_client
 import asyncio
 import time
 from typing import Dict, Tuple
@@ -34,10 +34,10 @@ async def generate_embedding(text: str, is_query: bool = False) -> list[float]:
                 del _query_embedding_cache[cleaned_query]
 
     # Re-ensure Gemini client config is configured
-    configure_gemini()
+    client = get_gemini_client()
     
     # Select task type based on retrieval mode
-    task_type = "retrieval_query" if is_query else "retrieval_document"
+    task_type = "RETRIEVAL_QUERY" if is_query else "RETRIEVAL_DOCUMENT"
     model = "models/gemini-embedding-001"
 
     try:
@@ -45,13 +45,16 @@ async def generate_embedding(text: str, is_query: bool = False) -> list[float]:
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
             None,
-            lambda: genai.embed_content(
+            lambda: client.models.embed_content(
                 model=model,
-                content=text,
-                task_type=task_type
+                contents=text,
+                config=types.EmbedContentConfig(
+                    task_type=task_type,
+                    output_dimensionality=768
+                )
             )
         )
-        embedding = response["embedding"]
+        embedding = response.embeddings[0].values
         logger.info("Successfully generated embedding vector.")
 
         # Cache query embedding
