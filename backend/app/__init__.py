@@ -1,1 +1,1 @@
-# Qualia FastAPI Backend Application package.
+# Autosight FastAPI Backend Application package.

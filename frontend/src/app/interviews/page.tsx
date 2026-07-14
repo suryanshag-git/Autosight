@@ -184,7 +184,7 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
   };
 
   useEffect(() => {
-    const stored = localStorage.getItem("qualia_user");
+    const stored = localStorage.getItem("autosight_user");
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -285,7 +285,7 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("qualia_user");
+    localStorage.removeItem("autosight_user");
     setSession(null);
     setInterviews([]);
     setSelectedId("");
@@ -622,7 +622,7 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
               <div className="bg-indigo-950/25 border border-indigo-500/10 p-3 rounded-xl flex gap-2.5 items-start text-[10px] leading-relaxed text-indigo-300/80">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-indigo-400" />
                 <p>
-                  <strong>Privacy Notice:</strong> Qualia is a portfolio demo. Transcripts are sent to Gemini APIs and saved in a database. Avoid uploading sensitive or confidential proprietary records.
+                  <strong>Privacy Notice:</strong> Autosight is a portfolio demo. Transcripts are sent to Gemini APIs and saved in a database. Avoid uploading sensitive or confidential proprietary records.
                 </p>
               </div>
 
@@ -812,7 +812,7 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
                     <h4 className="font-bold mb-1 text-red-400">Offline Mock Insights Enabled</h4>
                     <p>
                       The Google Gemini API rate limit was exceeded (429) or offline during transcript upload. 
-                      Qualia automatically fell back to the local qualitative mock engine to provide a seamless research sandbox experience.
+                      Autosight automatically fell back to the local qualitative mock engine to provide a seamless research sandbox experience.
                     </p>
                   </div>
                 </div>

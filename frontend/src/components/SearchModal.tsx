@@ -75,7 +75,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
     let token = "";
     try {
-      const stored = localStorage.getItem("qualia_user");
+      const stored = localStorage.getItem("autosight_user");
       if (stored) {
         token = JSON.parse(stored).token || "";
       }

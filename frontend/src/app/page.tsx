@@ -60,7 +60,7 @@ export default function Dashboard() {
   const [interviews, setInterviews] = useState<any[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("qualia_user");
+    const stored = localStorage.getItem("autosight_user");
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -122,7 +122,7 @@ export default function Dashboard() {
   }, [session, authChecked]);
 
   const handleLogout = () => {
-    localStorage.removeItem("qualia_user");
+    localStorage.removeItem("autosight_user");
     setSession(null);
     setThemes([]);
     setInterviewsCount(null);
@@ -214,7 +214,7 @@ export default function Dashboard() {
                 Ready to synthesize your first interview?
               </h2>
               <p className="text-gray-400 text-sm lg:text-base leading-relaxed max-w-lg mx-auto font-medium">
-                Qualia is an evidence-backed qualitative analysis tool. Upload transcripts to automatically generate theme tags, verify user pain points, and extract grounded product feature requests.
+                Autosight is an evidence-backed qualitative analysis tool. Upload transcripts to automatically generate theme tags, verify user pain points, and extract grounded product feature requests.
               </p>
               <div className="pt-4">
                 <Link href="/interviews">
@@ -229,7 +229,7 @@ export default function Dashboard() {
 
           {/* Benefit Highlights */}
           <div className="space-y-6 pt-4">
-            <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 text-center">Core Qualia Capabilities</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 text-center">Core Autosight Capabilities</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="bg-[#111827]/40 border-[#1f2937]">
                 <CardHeader className="space-y-2.5">
@@ -283,7 +283,7 @@ export default function Dashboard() {
           <div className="relative z-10 space-y-6 max-w-2xl">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
               <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-              Qualia Research Synthesis
+              Autosight Research Synthesis
             </span>
             <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
               Synthesize Qualitative Data with Evidence-Backed Insights
@@ -448,7 +448,7 @@ export default function Dashboard() {
                 <div className="space-y-1">
                   <CardTitle className="text-sm font-semibold text-white">Strict Quote Grounding</CardTitle>
                   <CardDescription className="text-xs text-gray-400 leading-relaxed">
-                    Qualia maps every single qualitative insight directly to a verbatim quote in the raw transcript. No assumptions, no extrapolations.
+                    Autosight maps every single qualitative insight directly to a verbatim quote in the raw transcript. No assumptions, no extrapolations.
                   </CardDescription>
                 </div>
               </CardHeader>
@@ -474,7 +474,7 @@ export default function Dashboard() {
 
       {/* Footer Notice */}
       <footer className="border-t border-[#1f2937] pt-6 pb-12 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500 font-semibold mt-12 shrink-0">
-        <p>© 2026 Qualia. All rights reserved.</p>
+        <p>© 2026 Autosight. All rights reserved.</p>
         <p className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full uppercase tracking-wider font-extrabold text-[10px]">
           Built as AI Engineering Demo
         </p>

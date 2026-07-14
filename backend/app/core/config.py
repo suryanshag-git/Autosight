@@ -4,7 +4,7 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Qualia Backend"
+    PROJECT_NAME: str = "Autosight Backend"
     API_V1_STR: str = "/api/v1"
     
     # CORS Origins - supports comma-separated list or JSON array string

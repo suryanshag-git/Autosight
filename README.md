@@ -1,4 +1,4 @@
-# 🧠 Qualia
+# 🧠 Autosight
 
 ### *Evidence-Backed Qualitative Research Synthesis Platform powered by Gemini AI*
 
@@ -10,13 +10,13 @@
 [![Gemini](https://img.shields.io/badge/Google_Gemini-8E75C2?style=for-the-badge&logo=google)](https://ai.google.dev/)
 [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python)](https://www.python.org/)
 
-Qualia is a qualitative research platform that translates raw user interview transcripts into structured, evidence-backed insights. It automatically clusters recurring themes, extracts feature requests, lists pain points, and validates every claim with verbatim quotes mapped to the original session context.
+Autosight is a qualitative research platform that translates raw user interview transcripts into structured, evidence-backed insights. It automatically clusters recurring themes, extracts feature requests, lists pain points, and validates every claim with verbatim quotes mapped to the original session context.
 
 ---
 
 ## 🎯 Value Proposition
 
-Qualitative research synthesis is traditionally a slow, manual process prone to subjective bias. Qualia automates this workflow without sacrificing trustworthiness. By using zero-temperature structured schemas and semantic vector databases, **every insight is strictly grounded in raw interview evidence**.
+Qualitative research synthesis is traditionally a slow, manual process prone to subjective bias. Autosight automates this workflow without sacrificing trustworthiness. By using zero-temperature structured schemas and semantic vector databases, **every insight is strictly grounded in raw interview evidence**.
 
 ---
 
@@ -36,7 +36,7 @@ Here are the user interface screens demonstrating the platform's core dashboard 
 
 | Main Dashboard & Sentiment Metrics | Interview Workspace & Grounding Panel |
 | :---: | :---: |
-| ![Qualia Dashboard](frontend/public/dashboard.png) | ![Qualia Interviews Page](frontend/public/interviews.png) |
+| ![Autosight Dashboard](frontend/public/dashboard.png) | ![Autosight Interviews Page](frontend/public/interviews.png) |
 
 ---
 
@@ -75,13 +75,13 @@ graph TD
 ## 💡 Key Technical Decisions
 
 ### 1. Pydantic-Driven Zero-Temperature Inference
-To guarantee zero-hallucination structure compliance, Qualia configures the Gemini client with strict Pydantic definitions ([insight.py](file:///c:/Users/Tanisha%20agarwal/PythonFiles/Engineer%20Surya/Career%20Search/Great%20Questions/qualia/backend/app/schemas/insight.py)) and system instructions. Setting `temperature = 0.0` ensures the model stays strictly grounded inside raw transcript facts.
+To guarantee zero-hallucination structure compliance, Autosight configures the Gemini client with strict Pydantic definitions ([insight.py](file:///c:/Users/Tanisha%20agarwal/PythonFiles/Engineer%20Surya/Career%20Search/Great%20Questions/qualia/backend/app/schemas/insight.py)) and system instructions. Setting `temperature = 0.0` ensures the model stays strictly grounded inside raw transcript facts.
 
 ### 2. Dual-Mode Storage & Offline Sandbox
 To accommodate sandbox demos without requiring active API keys or database servers, the repository layer ([interview_repository.py](file:///c:/Users/Tanisha%20agarwal/PythonFiles/Engineer%20Surya/Career%20Search/Great%20Questions/qualia/backend/app/db/repositories/interview_repository.py)) falls back to a clean mock state. It calculates cosine similarity locally using Python's native `math` module if the Supabase client connection fails or goes offline.
 
 ### 3. Dynamic Vector Type-Parsing
-PostgreSQL `pgvector` responses from Supabase queries return as string representations of float lists (e.g. `'[0.1, 0.2, ...]'`). Qualia uses Pydantic's `@field_validator("embedding", mode="before")` inside [interview.py](file:///c:/Users/Tanisha%20agarwal/PythonFiles/Engineer%20Surya/Career%20Search/Great%20Questions/qualia/backend/app/models/interview.py) to parse these string results into clean python float lists on-the-fly, preventing server-side validation crashes.
+PostgreSQL `pgvector` responses from Supabase queries return as string representations of float lists (e.g. `'[0.1, 0.2, ...]'`). Autosight uses Pydantic's `@field_validator("embedding", mode="before")` inside [interview.py](file:///c:/Users/Tanisha%20agarwal/PythonFiles/Engineer%20Surya/Career%20Search/Great%20Questions/qualia/backend/app/models/interview.py) to parse these string results into clean python float lists on-the-fly, preventing server-side validation crashes.
 
 ---
 
@@ -138,7 +138,7 @@ This project is configured for continuous delivery. Follow the guides below to h
 
 ### 1. Backend Host (Railway Recommended)
 FastAPI can be easily deployed to [Railway](https://railway.app):
-1. **Create Project**: Click **New Project** -> **Deploy from GitHub repository** -> Select your `qualia` repository.
+1. **Create Project**: Click **New Project** -> **Deploy from GitHub repository** -> Select your `autosight` repository.
 2. **Set Root Directory**: Inside the service settings on Railway, configure the **Root Directory** to `backend`.
 3. **Build & Start Commands**: Railway automatically detects Python environments. Set the Start Command to:
    ```bash
@@ -148,16 +148,16 @@ FastAPI can be easily deployed to [Railway](https://railway.app):
    *   `GEMINI_API_KEY`: Your Google Gemini API Key.
    *   `SUPABASE_URL`: (Optional) Your Supabase project URL.
    *   `SUPABASE_KEY`: (Optional) Your Supabase project anonymous key.
-   *   `ALLOWED_ORIGINS`: Set to your deployed Vercel frontend URL (e.g. `https://qualia-research.vercel.app`).
+   *   `ALLOWED_ORIGINS`: Set to your deployed Vercel frontend URL (e.g. `https://autosight-research.vercel.app`).
 
 ### 2. Frontend Host (Vercel)
 The Next.js frontend is fully optimized for [Vercel](https://vercel.com):
-1. **Create Project**: Import your Qualia repository into Vercel.
+1. **Create Project**: Import your Autosight repository into Vercel.
 2. **Configure Settings**:
    *   **Framework Preset**: Next.js
    *   **Root Directory**: `frontend`
 3. **Define Environment Variables**: Under settings, configure the following key-value pair:
-   *   `NEXT_PUBLIC_API_URL`: Set to your deployed backend API URL (e.g. `https://qualia-backend.up.railway.app`).
+   *   `NEXT_PUBLIC_API_URL`: Set to your deployed backend API URL (e.g. `https://autosight-backend.up.railway.app`).
 4. **Deploy**: Click **Deploy**. Vercel will automatically build, optimize, and serve the frontend statically.
 
 ### 3. Post-Deployment Checks

@@ -52,7 +52,7 @@ export default function AuthOverlay({ onAuthSuccess }: AuthOverlayProps) {
         token: data.token,
         username: data.username,
       };
-      localStorage.setItem("qualia_user", JSON.stringify(userSession));
+      localStorage.setItem("autosight_user", JSON.stringify(userSession));
 
       onAuthSuccess(data.token, data.username);
     } catch (err: any) {
@@ -73,7 +73,7 @@ export default function AuthOverlay({ onAuthSuccess }: AuthOverlayProps) {
         <CardHeader className="text-center space-y-3 pb-4">
           <div className="mx-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 w-fit">
             <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-            Welcome to Qualia
+            Welcome to Autosight
           </div>
           <CardTitle className="text-2xl font-extrabold tracking-tight text-white">
             {isSignup ? "Create a Research Session" : "Access Research Session"}

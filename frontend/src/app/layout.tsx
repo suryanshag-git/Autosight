@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Qualia - AI Qualitative Research Platform",
+  title: "Autosight - AI Qualitative Research Platform",
   description: "Evidence-backed qualitative research analysis and insight synthesis.",
 };
 

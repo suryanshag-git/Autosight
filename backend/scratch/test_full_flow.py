@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 def test_full_processing_flow():
-    print("=== Qualia End-to-End Processing Flow Integration Test ===")
+    print("=== Autosight End-to-End Processing Flow Integration Test ===")
     
     # Initialize TestClient
     client = TestClient(app)

@@ -37,7 +37,7 @@ Mark: I feel mixed. On one hand, transcription technology has gotten incredibly 
 """
 
 async def test_extraction():
-    print("=== Qualia Extraction Pipeline Test ===")
+    print("=== Autosight Extraction Pipeline Test ===")
     print(f"Loaded Sample Transcript ({len(SAMPLE_TRANSCRIPT.split())} words).\n")
     
     api_key = settings.GEMINI_API_KEY

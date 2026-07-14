@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 def test_semantic_search():
-    print("=== Qualia Semantic Search Integration Test ===")
+    print("=== Autosight Semantic Search Integration Test ===")
     
     # Initialize TestClient
     client = TestClient(app)
