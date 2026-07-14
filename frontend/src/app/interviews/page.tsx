@@ -101,6 +101,38 @@ const INITIAL_INTERVIEWS: InterviewItem[] = [
   }
 ];
 
+const extractTitleFromTranscript = (text: string): string => {
+  if (!text) return "";
+  const lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length === 0) return "";
+  
+  // 1. Try to find "Study: ..." or "Session: ..." or similar metadata in the first 10 lines
+  for (let i = 0; i < Math.min(10, lines.length); i++) {
+    const line = lines[i];
+    if (/^(study|session|title|project|interview)\s*:\s*/i.test(line)) {
+      return line.replace(/^(study|session|title|project|interview)\s*:\s*/i, "").trim();
+    }
+  }
+  
+  // 2. Try to find the first line that looks like a title/heading (non-empty, not decoration)
+  for (let i = 0; i < Math.min(5, lines.length); i++) {
+    const line = lines[i];
+    const cleaned = line.replace(/^[=\-*#\s]+|[=\-*#\s]+$/g, "").trim();
+    if (cleaned && cleaned.length > 3 && !cleaned.toLowerCase().includes("transcript") && cleaned.length < 80) {
+      return cleaned;
+    }
+  }
+
+  // 3. Fallback to the first line stripped of decor
+  const firstLine = lines[0];
+  const cleanedFirst = firstLine.replace(/^[=\-*#\s]+|[=\-*#\s]+$/g, "").trim();
+  if (cleanedFirst) {
+    return cleanedFirst.length > 60 ? cleanedFirst.slice(0, 57) + "..." : cleanedFirst;
+  }
+
+  return "Untitled Interview";
+};
+
 export default function InterviewsPage({ searchParams }: { searchParams: Promise<{ id?: string; theme?: string }> }) {
   const resolvedParams = use(searchParams);
   const queryId = resolvedParams.id;
@@ -196,7 +228,13 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !transcript) {
+    let currentTitle = title.trim();
+    if (!currentTitle && transcript.trim()) {
+      currentTitle = extractTitleFromTranscript(transcript);
+      setTitle(currentTitle);
+    }
+
+    if (!currentTitle || !transcript) {
       setError("Please fill out both the interview title and the transcript text.");
       return;
     }
@@ -207,7 +245,7 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
     const payload = {
-      title,
+      title: currentTitle,
       transcript,
       participant_info: {
         name: participantName || "Anonymous User",
@@ -396,6 +434,15 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
                   placeholder="Or paste raw interview transcript here..."
                   value={transcript}
                   onChange={(e) => setTranscript(e.target.value)}
+                  onPaste={(e) => {
+                    const pastedText = e.clipboardData.getData("text");
+                    if (!title && pastedText.trim()) {
+                      const extracted = extractTitleFromTranscript(pastedText);
+                      if (extracted) {
+                        setTitle(extracted);
+                      }
+                    }
+                  }}
                   className="w-full bg-[#0b0f19] border border-[#1f2937] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#6366f1] transition-all resize-none"
                   disabled={loading}
                 />
