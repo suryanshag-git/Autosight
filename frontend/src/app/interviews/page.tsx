@@ -24,8 +24,11 @@ import {
   Heart,
   Scale,
   Copy,
-  Check
+  Check,
+  Trash,
+  LogOut
 } from "lucide-react";
+import AuthOverlay from "@/components/AuthOverlay";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -139,9 +142,12 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
   const queryTheme = resolvedParams.theme;
   const router = useRouter();
 
-  const [interviews, setInterviews] = useState<InterviewItem[]>(INITIAL_INTERVIEWS);
-  const [selectedId, setSelectedId] = useState<string>(INITIAL_INTERVIEWS[0].id);
+  const [interviews, setInterviews] = useState<InterviewItem[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [session, setSession] = useState<{ token: string; username: string } | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(false);
 
   const handleCopyQuote = (quoteText: string, index: number) => {
     navigator.clipboard.writeText(quoteText);
@@ -149,15 +155,106 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
+  useEffect(() => {
+    const stored = localStorage.getItem("qualia_user");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.token && parsed.username) {
+          setSession({ token: parsed.token, username: parsed.username });
+        }
+      } catch (err) {
+        console.error("Failed to parse stored session", err);
+      }
+    }
+    setAuthChecked(true);
+  }, []);
 
   useEffect(() => {
-    if (queryId) {
+    if (!session?.token) return;
+
+    const fetchInterviews = async () => {
+      setFetchLoading(true);
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      try {
+        const response = await fetch(`${backendUrl}/api/v1/interviews`, {
+          headers: {
+            "Authorization": `Bearer ${session.token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const items: InterviewItem[] = data.map((item: any) => ({
+            id: item.interview.id,
+            title: item.interview.title,
+            transcript: item.interview.transcript,
+            date: item.interview.date,
+            participant_info: item.interview.participant_info,
+            insight: item.insight.data
+          }));
+          setInterviews(items);
+          if (items.length > 0) {
+            setSelectedId(items[0].id);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch user interviews:", e);
+      } finally {
+        setFetchLoading(false);
+      }
+    };
+
+    fetchInterviews();
+  }, [session]);
+
+  useEffect(() => {
+    if (queryId && interviews.length > 0) {
       const exists = interviews.some((i) => i.id === queryId);
       if (exists) {
         setSelectedId(queryId);
       }
     }
   }, [queryId, interviews]);
+
+  const handleDelete = async (id: string) => {
+    if (!session?.token) return;
+    if (!confirm("Are you sure you want to delete this research session permanently? This action cannot be undone.")) {
+      return;
+    }
+
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    try {
+      const response = await fetch(`${backendUrl}/api/v1/interviews/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${session.token}`
+        }
+      });
+      if (response.ok) {
+        setInterviews((prev) => {
+          const nextItems = prev.filter((item) => item.id !== id);
+          if (selectedId === id && nextItems.length > 0) {
+            setSelectedId(nextItems[0].id);
+          } else if (nextItems.length === 0) {
+            setSelectedId("");
+          }
+          return nextItems;
+        });
+      } else {
+        alert("Failed to delete interview. Please check authorization.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error deleting interview session.");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("qualia_user");
+    setSession(null);
+    setInterviews([]);
+    setSelectedId("");
+  };
 
   const visibleInterviews = interviews.filter((item) => {
     if (!queryTheme) return true;
@@ -257,7 +354,10 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
     try {
       const response = await fetch(`${backendUrl}/api/v1/interviews`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.token}`
+        },
         body: JSON.stringify(payload),
       });
 
@@ -334,11 +434,32 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
     }
   };
 
+  if (authChecked && !session) {
+    return <AuthOverlay onAuthSuccess={(token, username) => setSession({ token, username })} />;
+  }
+
   return (
     <div className="flex flex-col lg:flex-row gap-8 h-full lg:overflow-hidden max-w-7xl mx-auto w-full">
       {/* Left Column: Form + List */}
       <div className="flex-1 flex flex-col gap-6 lg:overflow-y-auto pr-2 max-w-md w-full shrink-0">
         
+        {/* Session Profile Bar */}
+        <div className="flex items-center justify-between bg-[#111827]/40 border border-[#1f2937] px-4 py-2.5 rounded-xl shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+              <User className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Active User</p>
+              <p className="text-xs font-bold text-white leading-none mt-0.5">{session?.username}</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-gray-400 hover:text-red-400 hover:bg-red-500/5 gap-1 text-[9px] uppercase font-bold tracking-wider px-2 py-1 h-auto">
+            <LogOut className="w-3.5 h-3.5" />
+            Logout
+          </Button>
+        </div>
+
         {/* Upload Form Card */}
         <Card>
           <CardHeader className="pb-4">
@@ -455,6 +576,14 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
                 </div>
               )}
 
+              {/* Privacy Warning Disclaimer */}
+              <div className="bg-indigo-950/25 border border-indigo-500/10 p-3 rounded-xl flex gap-2.5 items-start text-[10px] leading-relaxed text-indigo-300/80">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-indigo-400" />
+                <p>
+                  <strong>Privacy Notice:</strong> Qualia is a portfolio demo. Transcripts are sent to Gemini APIs and saved in a database. Avoid uploading sensitive or confidential proprietary records.
+                </p>
+              </div>
+
               <Button
                 type="submit"
                 disabled={loading}
@@ -511,21 +640,32 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-bold text-sm text-white truncate max-w-[280px]">
+                    <h4 className="font-bold text-sm text-white truncate max-w-[200px]">
                       {item.title}
                     </h4>
-                    <Badge
-                      variant={
-                        item.insight.sentiment === "Positive"
-                          ? "success"
-                          : item.insight.sentiment === "Negative"
-                          ? "destructive"
-                          : "warning"
-                      }
-                      className="shrink-0"
-                    >
-                      {item.insight.sentiment}
-                    </Badge>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(item.id);
+                        }}
+                        className="p-1 hover:text-red-400 text-gray-500 rounded hover:bg-red-500/10 transition-colors"
+                        title="Delete Session"
+                      >
+                        <Trash className="w-3.5 h-3.5" />
+                      </button>
+                      <Badge
+                        variant={
+                          item.insight.sentiment === "Positive"
+                            ? "success"
+                            : item.insight.sentiment === "Negative"
+                            ? "destructive"
+                            : "warning"
+                        }
+                      >
+                        {item.insight.sentiment}
+                      </Badge>
+                    </div>
                   </div>
 
                   <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
@@ -553,7 +693,12 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
 
       {/* Right Column: Evidence Panel */}
       <div className="flex-1 bg-[#111827] border border-[#1f2937] rounded-2xl flex flex-col overflow-hidden lg:h-[85vh] h-auto">
-        {selectedInterview ? (
+        {fetchLoading ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8">
+            <Loader2 className="w-10 h-10 text-indigo-500 mb-3 animate-spin" />
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Retrieving workspace sessions...</p>
+          </div>
+        ) : selectedInterview ? (
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Evidence Header */}
             <div className="p-6 border-b border-[#1f2937] space-y-4">

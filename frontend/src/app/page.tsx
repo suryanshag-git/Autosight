@@ -7,6 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 
+import { LogOut, User } from "lucide-react";
+import AuthOverlay from "@/components/AuthOverlay";
+
 interface ClusteredTheme {
   name: string;
   frequency: number;
@@ -50,12 +53,41 @@ const SkeletonTheme = () => (
 export default function Dashboard() {
   const [themes, setThemes] = useState<ClusteredTheme[]>([]);
   const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<{ token: string; username: string } | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
+    const stored = localStorage.getItem("qualia_user");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.token && parsed.username) {
+          setSession({ token: parsed.token, username: parsed.username });
+        }
+      } catch (err) {
+        console.error("Failed to parse stored session", err);
+      }
+    }
+    setAuthChecked(true);
+  }, []);
+
+  useEffect(() => {
+    if (!session?.token) {
+      if (authChecked) {
+        setLoading(false);
+      }
+      return;
+    }
+
     const fetchThemes = async () => {
+      setLoading(true);
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       try {
-        const response = await fetch(`${backendUrl}/api/v1/themes`);
+        const response = await fetch(`${backendUrl}/api/v1/themes`, {
+          headers: {
+            "Authorization": `Bearer ${session.token}`
+          }
+        });
         if (response.ok) {
           const data = await response.json();
           setThemes(data);
@@ -64,7 +96,6 @@ export default function Dashboard() {
         }
       } catch (e) {
         console.error("Failed to fetch themes:", e);
-        // Fallback mock themes
         setThemes([
           {
             name: "Synthesis Bottlenecks",
@@ -97,14 +128,41 @@ export default function Dashboard() {
     };
 
     fetchThemes();
-  }, []);
+  }, [session, authChecked]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("qualia_user");
+    setSession(null);
+    setThemes([]);
+  };
+
+  if (authChecked && !session) {
+    return <AuthOverlay onAuthSuccess={(token, username) => setSession({ token, username })} />;
+  }
 
   const totalInterviews = themes.length > 0 
     ? Math.max(12, ...themes.map(t => t.supporting_interview_ids.length)) 
     : 12;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12 flex flex-col min-h-screen">
+    <div className="max-w-5xl mx-auto space-y-8 flex flex-col min-h-screen">
+      {/* Session Profile Bar */}
+      <div className="flex items-center justify-between bg-[#111827]/40 border border-[#1f2937] px-6 py-3 rounded-2xl mt-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+            <User className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Active Workspace</p>
+            <p className="text-xs font-bold text-white">{session?.username}</p>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" onClick={handleLogout} className="text-gray-400 hover:text-red-400 hover:bg-red-500/5 gap-1.5 text-[10px] uppercase font-bold tracking-wider">
+          <LogOut className="w-3.5 h-3.5" />
+          Logout
+        </Button>
+      </div>
+
       {/* Main Content Area */}
       <div className="flex-1 space-y-12">
         {/* Header Banner */}

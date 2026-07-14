@@ -73,10 +73,23 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+    let token = "";
+    try {
+      const stored = localStorage.getItem("qualia_user");
+      if (stored) {
+        token = JSON.parse(stored).token || "";
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
     try {
       const response = await fetch(`${backendUrl}/api/v1/search`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({
           query: query.trim(),
           limit: 5,
