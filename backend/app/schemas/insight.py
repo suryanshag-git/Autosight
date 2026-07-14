@@ -66,5 +66,6 @@ class InsightResponse(BaseSchema):
     id: UUID = Field(..., description="Unique database ID of the insight.")
     interview_id: UUID = Field(..., description="Associated interview ID.")
     data: InsightExtraction = Field(..., description="The structured insight extraction details.")
+    is_mock: bool = Field(default=False, description="Flag indicating if qualitative extraction used local mocks.")
     created_at: datetime = Field(..., description="Timestamp of when this insight was created.")
     updated_at: datetime = Field(..., description="Timestamp of when this insight was last updated.")

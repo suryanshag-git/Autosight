@@ -1,11 +1,35 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import time
+from collections import defaultdict
 
 from app.core.config import settings
 from app.schemas.interview import InterviewCreate, InterviewResponse
 from app.schemas.insight import InsightResponse
 from app.services.interview_service import InterviewProcessingService
+
+class RateLimiter:
+    def __init__(self, requests_limit: int, window_seconds: int):
+        self.requests_limit = requests_limit
+        self.window_seconds = window_seconds
+        # ip_address -> list of timestamps
+        self.history = defaultdict(list)
+        
+    def check_rate_limit(self, ip: str) -> None:
+        now = time.time()
+        # Filter history to only keep timestamps within the current window
+        self.history[ip] = [t for t in self.history[ip] if now - t < self.window_seconds]
+        if len(self.history[ip]) >= self.requests_limit:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many requests. Please slow down and try again later."
+            )
+        self.history[ip].append(now)
+
+# Instantiate rate limiters
+upload_rate_limiter = RateLimiter(requests_limit=5, window_seconds=60)
+search_rate_limiter = RateLimiter(requests_limit=30, window_seconds=60)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -44,12 +68,14 @@ def health_check():
     tags=["Interviews"],
     status_code=201
 )
-async def process_new_interview(payload: InterviewCreate):
+async def process_new_interview(payload: InterviewCreate, request: Request):
     """
     Accepts an interview transcript, saves it to Supabase database, triggers
     AI qualitative insight extraction (with fallback), and returns the results.
     """
     try:
+        ip = request.client.host if request.client else "127.0.0.1"
+        upload_rate_limiter.check_rate_limit(ip)
         service = InterviewProcessingService()
         interview, insight = await service.process_interview(payload)
         return {
@@ -83,12 +109,14 @@ class SearchResultItem(BaseModel):
     response_model=list[SearchResultItem],
     tags=["Search"]
 )
-async def search_interviews(payload: SearchRequest):
+async def search_interviews(payload: SearchRequest, request: Request):
     """
     Performs semantic vector search across interview transcripts.
     Generates embedding for query, runs similarity check, and returns highlights.
     """
     try:
+        ip = request.client.host if request.client else "127.0.0.1"
+        search_rate_limiter.check_rate_limit(ip)
         # Generate query embedding
         query_embedding = await generate_embedding(payload.query, is_query=True)
         

@@ -37,6 +37,7 @@ interface KeyQuote {
 }
 
 interface InsightData {
+  is_mock?: boolean;
   pain_points: string[];
   feature_requests: string[];
   positive_feedback: string[];
@@ -567,6 +568,20 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
             {/* Evidence Panel Details (Scrollable) */}
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
               
+              {/* Local Mock Fallback Alert Callout */}
+              {selectedInterview.insight.is_mock && (
+                <div className="bg-red-500/10 border-l-4 border-red-500 text-red-300 p-4 rounded-r-xl flex gap-3.5 items-start text-xs leading-relaxed shadow-lg">
+                  <AlertCircle className="w-5 h-5 shrink-0 text-red-400 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold mb-1 text-red-400">Offline Mock Insights Enabled</h4>
+                    <p>
+                      The Google Gemini API rate limit was exceeded (429) or offline during transcript upload. 
+                      Qualia automatically fell back to the local qualitative mock engine to provide a seamless research sandbox experience.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Contradicting / Mixed Sentiment Alert Callout */}
               {selectedInterview.insight.sentiment === "Mixed" && (
                 <div className="bg-amber-500/10 border-l-4 border-amber-500 text-amber-300 p-4 rounded-r-xl flex gap-3.5 items-start text-xs leading-relaxed shadow-lg">

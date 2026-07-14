@@ -28,10 +28,20 @@ class InterviewProcessingService:
     async def process_interview(self, payload: InterviewCreate) -> tuple[InterviewModel, InsightModel]:
         """
         Coordinates the workflow of:
-        1. Creating and saving an interview record in the database.
-        2. Extracting qualitative insights from the interview transcript.
-        3. Creating and saving the insight record linked to the interview.
+        1. Checking for duplicate transcript contents.
+        2. Creating and saving an interview record in the database.
+        3. Extracting qualitative insights from the interview transcript.
+        4. Creating and saving the insight record linked to the interview.
         """
+        # Check for duplicate transcript content to avoid redundant Gemini calls
+        existing_interview = await self.interview_repo.get_by_transcript(payload.transcript)
+        if existing_interview:
+            logger.info(f"Duplicate transcript detected. Reusing existing interview {existing_interview.id}...")
+            existing_insight = await self.insight_repo.get_by_interview_id(existing_interview.id)
+            if existing_insight:
+                logger.info(f"Successfully loaded and returning existing insights {existing_insight.id}.")
+                return existing_interview, existing_insight
+
         from app.ai.embeddings import generate_embedding
         interview_id = uuid4()
         now = datetime.now(timezone.utc)
@@ -65,6 +75,7 @@ class InterviewProcessingService:
 
         # 2. Extract qualitative insights via Gemini (with mock fallback if rate limited)
         logger.info(f"Triggering qualitative analysis for interview {interview_id}...")
+        is_mock_insight = False
         try:
             extracted_insight_data = await self.extractor.extract_insights(payload.transcript)
         except Exception as e:
@@ -72,6 +83,7 @@ class InterviewProcessingService:
                 f"Gemini insight extraction failed: {e}. "
                 "Falling back to mock qualitative extraction data."
             )
+            is_mock_insight = True
             # Default mock insights for test verification & seamless operation during rate limits
             extracted_insight_data = InsightExtraction(
                 pain_points=[
@@ -111,6 +123,7 @@ class InterviewProcessingService:
             id=insight_id,
             interview_id=interview_id,
             data=extracted_insight_data,
+            is_mock=is_mock_insight,
             created_at=now,
             updated_at=now
         )

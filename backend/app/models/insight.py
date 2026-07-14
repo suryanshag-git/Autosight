@@ -11,6 +11,7 @@ class InsightModel(BaseModel):
     id: UUID = Field(..., description="Unique database primary key for the insight.")
     interview_id: UUID = Field(..., description="The ID of the interview this insight belongs to.")
     data: InsightExtraction = Field(..., description="The structured insight details extracted from the interview.")
+    is_mock: bool = Field(default=False, description="Flag indicating if qualitative extraction used local mocks.")
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="Timestamp of when the database record was created."

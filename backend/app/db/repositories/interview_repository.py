@@ -50,6 +50,36 @@ class InterviewRepository:
             logger.error(f"Supabase interview select failed: {e}. Checking local in-memory DB.")
             return _mock_interviews_db.get(interview_id)
 
+    async def get_by_transcript(self, transcript: str) -> Optional[InterviewModel]:
+        """
+        Retrieves an interview record with the exact transcript content.
+        Helps prevent duplicate uploads and redundant AI extractions.
+        """
+        if not transcript:
+            return None
+        stripped_t = transcript.strip()
+
+        if self.client is None:
+            for interview in _mock_interviews_db.values():
+                if interview.transcript.strip() == stripped_t:
+                    return interview
+            return None
+
+        try:
+            response = self.client.table("interviews").select("*").eq("transcript", stripped_t).execute()
+            if not response.data:
+                for interview in _mock_interviews_db.values():
+                    if interview.transcript.strip() == stripped_t:
+                        return interview
+                return None
+            return InterviewModel(**response.data[0])
+        except Exception as e:
+            logger.error(f"Supabase query by transcript failed: {e}. Checking local mock DB.")
+            for interview in _mock_interviews_db.values():
+                if interview.transcript.strip() == stripped_t:
+                    return interview
+            return None
+
     async def search_similarity(
         self, query_embedding: list[float], limit: int = 5, threshold: float = 0.3
     ) -> list[dict]:
