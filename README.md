@@ -1,6 +1,6 @@
 # 🧠 Qualia
 
-### *Evidence-Backed Qualitative Research & AI Synthesis Platform*
+### *Evidence-Backed Qualitative Research Synthesis Platform powered by Gemini AI*
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs)](https://nextjs.org/)
@@ -10,7 +10,7 @@
 [![Gemini](https://img.shields.io/badge/Google_Gemini-8E75C2?style=for-the-badge&logo=google)](https://ai.google.dev/)
 [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python)](https://www.python.org/)
 
-Qualia is a qualitative research platform that translates user interview transcripts into evidence-backed insights. It automatically groups recurring themes, extracts feature requests, lists pain points, and verifies every claim with verbatim quotes mapped to the original session context.
+Qualia is a qualitative research platform that translates raw user interview transcripts into structured, evidence-backed insights. It automatically clusters recurring themes, extracts feature requests, lists pain points, and validates every claim with verbatim quotes mapped to the original session context.
 
 ---
 
@@ -22,120 +22,118 @@ Qualitative research synthesis is traditionally a slow, manual process prone to 
 
 ## 🚀 Key Features
 
-*   **🔍 Conceptual Semantic Search**: Search transcripts semantically rather than matching exact keywords using `pgvector` and Gemini embeddings (with pure-python Cosine Similarity fallback).
-*   **📊 Dynamic Theme Clustering**: Automatically clusters tags and topics across all uploaded sessions, choosing representative quotes for each cluster.
-*   **🗂️ Grounded Evidence Panel**: Displays pain points, feature requests, and positive feedback side-by-side with copy-to-clipboard verbatim quote highlights.
-*   **⚖️ Contradiction Detection**: Alerts researchers automatically with warnings when participants express conflicting views during the session.
-*   **🫳 Drag & Drop Transcript Reader**: Directly drag and drop transcript text files to parse and populate research details.
+*   **🛡️ Secure User Session Isolation**: Lightweight, username-based session authentication isolating interview records strictly by user account.
+*   **📊 Dynamic Sentiment & Emotion Index**: Real-time user emotion analysis displayed through animated progress bars that dynamically classify ratings (Positive, Mixed, Negative) depending on active sessions.
+*   **🧠 Thematic Coding Clusters**: Automatically clusters topics and tags across uploaded transcripts, finding representative quotes and calculating frequencies.
+*   **🗂️ Verbatim Grounding Evidence Grid**: Pain points, feature requests, and positive feedback highlights displayed side-by-side with clipboard copy actions.
+*   **⚡ Smart Local Fallbacks**: A seamless offline sandbox experience that automatically falls back to an in-memory DB and local cosine-similarity math if Gemini rate limits or Supabase databases are unconfigured.
 
 ---
 
-## 📸 Interface Screenshots
+## 📸 Interface Preview
 
-| Dashboard Thematic Clusters | Evidence Panel & Upload |
+Here are the user interface screens demonstrating the platform's core dashboard and interviews workspace:
+
+| Main Dashboard & Sentiment Metrics | Interview Workspace & Grounding Panel |
 | :---: | :---: |
-| ![Dashboard Theme Clustering Placeholder](https://placehold.co/600x400/0f172a/ffffff?text=Dashboard+Thematic+Clusters) | ![Evidence Panel Placeholder](https://placehold.co/600x400/0f172a/ffffff?text=Interviews+Upload+%26+Evidence+Panel) |
+| ![Qualia Dashboard](frontend/public/dashboard.png) | ![Qualia Interviews Page](frontend/public/interviews.png) |
 
 ---
 
 ## 🛠️ Technical Stack
 
-| Category | Technology | Description |
+| Component | Tech | Description |
 | :--- | :--- | :--- |
-| **Backend** | FastAPI, Python | Asynchronous API server handling vector retrieval. |
-| **LLM Integrations** | Google Gemini 2.0 | High-fidelity extraction via structured JSON outputs. |
-| **Embeddings** | Gemini embedding-001 | Translates text segments into 768-dimension vectors. |
-| **Vector DB** | Supabase, PostgreSQL | Stores vectors using `pgvector` for similarity queries. |
-| **Frontend** | Next.js 16 (App Router) | Responsive UI with custom component primitives. |
+| **Frontend UI** | Next.js 16 (App Router), TypeScript, TailwindCSS | Responsive layout with customized Lucide React icons. |
+| **Backend API** | FastAPI, Python 3.11+, Pydantic v2 | High-performance asynchronous endpoint router. |
+| **LLM Inference** | Google Gemini API (`gemini-2.5-flash`) | Structured JSON extraction utilizing strict system instructions. |
+| **Embeddings** | Gemini `text-embedding-004` | Translates segments into 768-D vectors. |
+| **Primary Database** | Supabase, PostgreSQL (`pgvector`) | Vector storage and similarity calculation RPCs. |
 
 ---
 
 ## 🏗️ Architecture Overview
 
+The following diagram illustrates the flow of raw transcript data through the synthesis engine to visual rendering:
+
 ```mermaid
 graph TD
-    A[User Transcript] -->|Drag & Drop| B[Next.js Frontend]
+    A[User Transcript] -->|Input Submit| B[Next.js Frontend]
     B -->|POST /api/v1/interviews| C[FastAPI Backend]
     C -->|Gemini API| D[Structured Insights Extraction]
     C -->|Gemini Embedding API| E[768-D Vector Generation]
     D -->|Persist insights| F[Database Repositories]
     E -->|Persist embeddings| F
-    F -->|Supabase / pgvector| G[PostgreSQL Database]
-    F -->|Local Fallbacks| H[In-Memory DB & Cosine Math]
-    B -->|POST /api/v1/search| C
-    C -->|Search RPC / local similarity| F
+    F -->|Supabase | G[PostgreSQL Database]
+    F -->|Local Fallbacks| H[In-Memory Mock Stores]
+    B -->|GET /api/v1/interviews| C
+    B -->|GET /api/v1/themes| C
 ```
 
 ---
 
-## ⚡ Quick Start
+## 💡 Key Technical Decisions
 
-Boot the FastAPI backend and the Next.js frontend concurrently.
+### 1. Pydantic-Driven Zero-Temperature Inference
+To guarantee zero-hallucination structure compliance, Qualia configures the Gemini client with strict Pydantic definitions ([insight.py](file:///c:/Users/Tanisha%20agarwal/PythonFiles/Engineer%20Surya/Career%20Search/Great%20Questions/qualia/backend/app/schemas/insight.py)) and system instructions. Setting `temperature = 0.0` ensures the model stays strictly grounded inside raw transcript facts.
+
+### 2. Dual-Mode Storage & Offline Sandbox
+To accommodate sandbox demos without requiring active API keys or database servers, the repository layer ([interview_repository.py](file:///c:/Users/Tanisha%20agarwal/PythonFiles/Engineer%20Surya/Career%20Search/Great%20Questions/qualia/backend/app/db/repositories/interview_repository.py)) falls back to a clean mock state. It calculates cosine similarity locally using Python's native `math` module if the Supabase client connection fails or goes offline.
+
+### 3. Dynamic Vector Type-Parsing
+PostgreSQL `pgvector` responses from Supabase queries return as string representations of float lists (e.g. `'[0.1, 0.2, ...]'`). Qualia uses Pydantic's `@field_validator("embedding", mode="before")` inside [interview.py](file:///c:/Users/Tanisha%20agarwal/PythonFiles/Engineer%20Surya/Career%20Search/Great%20Questions/qualia/backend/app/models/interview.py) to parse these string results into clean python float lists on-the-fly, preventing server-side validation crashes.
+
+---
+
+## ⚡ Quick Start
 
 ### 1. Run the Backend API (FastAPI)
 1. Navigate to the backend folder:
    ```bash
    cd backend
    ```
-2. Create and activate a python virtual environment:
+2. Setup python virtual environment and dependencies:
    ```bash
    python -m venv .venv
    .venv\Scripts\activate   # Windows
    source .venv/bin/activate # Unix/macOS
-   ```
-3. Install package requirements:
-   ```bash
    pip install -r requirements.txt
    ```
-4. Configure environment variables (create a `.env` file inside `backend/`):
+3. Set up your environment (create a `.env` file inside `backend/`):
    ```env
    GEMINI_API_KEY="your-gemini-api-key"
    SUPABASE_URL="optional-supabase-url"
    SUPABASE_KEY="optional-supabase-anon-key"
    ```
-5. Start the development server:
+4. Start the server:
    ```bash
    uvicorn app.main:app --port 8000 --reload
    ```
-   *The Swagger API documentation will be available at **`http://localhost:8000/docs`**.*
+   *FastAPI Swagger documentation will load at [http://localhost:8000/docs](http://localhost:8000/docs).*
 
 ### 2. Run the Frontend (Next.js)
-1. Open a **second terminal** and navigate to the frontend folder:
+1. Open a new terminal and navigate to the frontend folder:
    ```bash
    cd frontend
    ```
-2. Install npm dependencies:
+2. Install packages:
    ```bash
    npm install
    ```
-3. Configure the local environment variables (create a `.env.local` file inside `frontend/`):
+3. Set environment vars (create `.env.local` inside `frontend/`):
    ```env
    NEXT_PUBLIC_API_URL=http://localhost:8000
    ```
-4. Start the Next.js development server:
+4. Run the Dev server:
    ```bash
    npm run dev
    ```
-   *The application will boot up at **`http://localhost:3000`**.*
-
----
-
-## 💡 Key Technical Decisions
-
-### 1. Zero-Temperature Structured Outputs
-Pydantic schemas are passed directly to Gemini’s API configuration (`response_schema`), ensuring responses validate cleanly against the Pydantic type definitions without hallucinated fields.
-
-### 2. Dual-Mode Database Fallbacks
-The data repositories are built to support a local fallback state. If Supabase is unconfigured or offline, the repositories serialize models locally and calculate similarity rankings using pure-python Cosine Similarity. This ensures that the system is fully operational locally in offline demo mode.
-
-### 3. Asynchronous Task Delegation
-Heavy extraction and embedding generations are executed in Python thread-pool executors to prevent blocking the main FastAPI event loop, maintaining high API throughput.
+   *Access the app interface at [http://localhost:3000](http://localhost:3000).*
 
 ---
 
 ## 🔮 Future Enhancements
 
-*   **🎙️ Audio Upload & Transcription**: Integrate Whisper API or Gemini audio parsing to transcribe and analyze raw audio/video files directly.
-*   **🔗 Jira / Linear Integration**: Add a direct integration to generate bug tickets or user stories from pain points with a single click.
-*   **📂 Multi-Project Workspaces**: Support dividing interviews into separate workspace folders for distinct research projects.
-
+*   **🎙️ Audio Transcript Parsing**: Native voice upload handling utilizing Gemini's multimodal audio capabilities.
+*   **🔗 Linear & Jira Integrations**: Automatic creation of user stories and engineering tasks directly from flagged pain points.
+*   **📂 Multi-Tenant Workspace Projects**: Grouping user interview sessions inside isolated folders.
