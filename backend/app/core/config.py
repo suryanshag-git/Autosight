@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     # Google Gemini API configuration (placeholder for future use)
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-2.5-flash"
 
 
 
