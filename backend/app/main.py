@@ -74,28 +74,58 @@ app = FastAPI(
 )
 
 # CORS middleware configuration
-if settings.BACKEND_CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.BACKEND_CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+import os
+allowed_origins = settings.BACKEND_CORS_ORIGINS
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
+if allowed_origins_env:
+    # Supports comma-separated list of origins
+    allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class InterviewProcessingResultSchema(BaseModel):
     interview: InterviewResponse
     insight: InsightResponse
 
 @app.get("/health", tags=["Health Check"])
-def health_check():
+async def health_check():
     """
-    Simple health check endpoint to verify backend service status.
+    Production health check endpoint verifying backend, database connection, and mock mode status.
     """
+    from app.db.supabase import supabase_client
+    
+    db_status = "unconfigured"
+    mock_mode = True
+    
+    if supabase_client is not None:
+        try:
+            # Quick select to verify database connectivity
+            supabase_client.table("users").select("id").limit(1).execute()
+            db_status = "connected"
+            mock_mode = False
+        except Exception as e:
+            db_status = f"error: {str(e)}"
+            mock_mode = True
+
     return {
         "status": "healthy",
         "project": settings.PROJECT_NAME,
-        "api_version": settings.API_V1_STR
+        "api_version": settings.API_V1_STR,
+        "database": {
+            "status": db_status,
+            "provider": "Supabase"
+        },
+        "mock_mode": mock_mode,
+        "gemini_api": {
+            "configured": bool(settings.GEMINI_API_KEY),
+            "model": settings.GEMINI_MODEL
+        }
     }
 
 # Auth endpoints

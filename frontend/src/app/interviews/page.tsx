@@ -28,6 +28,7 @@ import {
   LogOut
 } from "lucide-react";
 import AuthOverlay from "@/components/AuthOverlay";
+import { BACKEND_URL } from "@/config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -202,9 +203,8 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
 
     const fetchInterviews = async () => {
       setFetchLoading(true);
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       try {
-        const response = await fetch(`${backendUrl}/api/v1/interviews`, {
+        const response = await fetch(`${BACKEND_URL}/api/v1/interviews`, {
           headers: {
             "Authorization": `Bearer ${session.token}`
           }
@@ -258,9 +258,8 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
       return;
     }
 
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     try {
-      const response = await fetch(`${backendUrl}/api/v1/interviews/${id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/v1/interviews/${id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${session.token}`
@@ -375,8 +374,6 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
     setLoading(true);
     setError(null);
 
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
     const payload = {
       title: currentTitle,
       transcript,
@@ -388,7 +385,7 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
     };
 
     try {
-      const response = await fetch(`${backendUrl}/api/v1/interviews`, {
+      const response = await fetch(`${BACKEND_URL}/api/v1/interviews`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

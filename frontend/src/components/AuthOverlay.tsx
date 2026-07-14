@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sparkles, Loader2, AlertCircle, LogIn, UserPlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { BACKEND_URL } from "@/config";
 
 interface AuthOverlayProps {
   onAuthSuccess: (token: string, username: string) => void;
@@ -30,11 +31,10 @@ export default function AuthOverlay({ onAuthSuccess }: AuthOverlayProps) {
     setLoading(true);
     setError(null);
 
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const endpoint = isSignup ? "/api/v1/auth/signup" : "/api/v1/auth/login";
 
     try {
-      const response = await fetch(`${backendUrl}${endpoint}`, {
+      const response = await fetch(`${BACKEND_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: trimmed }),

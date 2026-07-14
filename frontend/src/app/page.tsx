@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 
 import { LogOut, User } from "lucide-react";
 import AuthOverlay from "@/components/AuthOverlay";
+import { BACKEND_URL } from "@/config";
 
 interface ClusteredTheme {
   name: string;
@@ -83,9 +84,8 @@ export default function Dashboard() {
 
     const fetchDashboardData = async () => {
       setLoading(true);
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       try {
-        const response = await fetch(`${backendUrl}/api/v1/interviews`, {
+        const response = await fetch(`${BACKEND_URL}/api/v1/interviews`, {
           headers: {
             "Authorization": `Bearer ${session.token}`
           }
@@ -97,7 +97,7 @@ export default function Dashboard() {
           setInterviewsCount(interviewsData.length);
 
           if (interviewsData.length > 0) {
-            const themeResponse = await fetch(`${backendUrl}/api/v1/themes`, {
+            const themeResponse = await fetch(`${BACKEND_URL}/api/v1/themes`, {
               headers: {
                 "Authorization": `Bearer ${session.token}`
               }

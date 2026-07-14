@@ -132,6 +132,40 @@ PostgreSQL `pgvector` responses from Supabase queries return as string represent
 
 ---
 
+## 🌐 Deployment Guide
+
+This project is configured for continuous delivery. Follow the guides below to host the application.
+
+### 1. Backend Host (Railway Recommended)
+FastAPI can be easily deployed to [Railway](https://railway.app):
+1. **Create Project**: Click **New Project** -> **Deploy from GitHub repository** -> Select your `qualia` repository.
+2. **Set Root Directory**: Inside the service settings on Railway, configure the **Root Directory** to `backend`.
+3. **Build & Start Commands**: Railway automatically detects Python environments. Set the Start Command to:
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port $PORT
+   ```
+4. **Define Variables**: Configure the following environment variables in the **Variables** tab:
+   *   `GEMINI_API_KEY`: Your Google Gemini API Key.
+   *   `SUPABASE_URL`: (Optional) Your Supabase project URL.
+   *   `SUPABASE_KEY`: (Optional) Your Supabase project anonymous key.
+   *   `ALLOWED_ORIGINS`: Set to your deployed Vercel frontend URL (e.g. `https://qualia-research.vercel.app`).
+
+### 2. Frontend Host (Vercel)
+The Next.js frontend is fully optimized for [Vercel](https://vercel.com):
+1. **Create Project**: Import your Qualia repository into Vercel.
+2. **Configure Settings**:
+   *   **Framework Preset**: Next.js
+   *   **Root Directory**: `frontend`
+3. **Define Environment Variables**: Under settings, configure the following key-value pair:
+   *   `NEXT_PUBLIC_API_URL`: Set to your deployed backend API URL (e.g. `https://qualia-backend.up.railway.app`).
+4. **Deploy**: Click **Deploy**. Vercel will automatically build, optimize, and serve the frontend statically.
+
+### 3. Post-Deployment Checks
+1. Validate connectivity by checking your deployed backend API status at `https://your-backend.railway.app/health`. The response should display `"database": {"status": "connected"}` if Supabase initialized successfully.
+2. Log in with a fresh username, upload a transcript, and verify that the synthesis runs end-to-end.
+
+---
+
 ## 🔮 Future Enhancements
 
 *   **🎙️ Audio Transcript Parsing**: Native voice upload handling utilizing Gemini's multimodal audio capabilities.
