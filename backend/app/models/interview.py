@@ -1,7 +1,10 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+import logging
+
+logger = logging.getLogger(__name__)
 
 class InterviewModel(BaseModel):
     """
@@ -24,4 +27,18 @@ class InterviewModel(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="Timestamp of when the database record was last updated."
     )
+
+    @field_validator("embedding", mode="before")
+    @classmethod
+    def parse_embedding(cls, v):
+        if isinstance(v, str):
+            try:
+                cleaned = v.strip().lstrip("[").rstrip("]")
+                if not cleaned:
+                    return []
+                return [float(x) for x in cleaned.split(",") if x.strip()]
+            except Exception as e:
+                logger.error(f"Failed to parse embedding string: {e}")
+                return None
+        return v
 

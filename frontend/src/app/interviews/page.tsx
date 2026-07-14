@@ -217,7 +217,16 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
             transcript: item.interview.transcript,
             date: item.interview.date,
             participant_info: item.interview.participant_info,
-            insight: item.insight.data
+            insight: item.insight?.data || {
+              pain_points: [],
+              feature_requests: [],
+              positive_feedback: [],
+              key_quotes: [],
+              user_persona: "Unknown Persona",
+              sentiment: "Neutral",
+              summary: "No qualitative insights generated yet.",
+              themes: []
+            }
           }));
           setInterviews(items);
           if (items.length > 0) {
@@ -400,7 +409,16 @@ export default function InterviewsPage({ searchParams }: { searchParams: Promise
         transcript: result.interview.transcript,
         date: result.interview.date,
         participant_info: result.interview.participant_info,
-        insight: result.insight.data
+        insight: result.insight?.data || {
+          pain_points: [],
+          feature_requests: [],
+          positive_feedback: [],
+          key_quotes: [],
+          user_persona: "Unknown Persona",
+          sentiment: "Neutral",
+          summary: "No qualitative insights generated yet.",
+          themes: []
+        }
       };
 
       setInterviews((prev) => [newItem, ...prev]);
