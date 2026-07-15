@@ -75,6 +75,10 @@ app = FastAPI(
 
 # CORS middleware configuration
 import os
+import logging
+
+logger = logging.getLogger(__name__)
+
 allowed_origins = list(settings.BACKEND_CORS_ORIGINS)
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
 if allowed_origins_env:
@@ -90,10 +94,20 @@ for origin in production_origins:
     if origin not in allowed_origins:
         allowed_origins.append(origin)
 
+# Normalize origins (remove trailing slashes to prevent mismatches)
+allowed_origins = [o.rstrip("/") for o in allowed_origins if o]
+
+@app.on_event("startup")
+def log_cors_configuration():
+    logger.info(f"=== Autosight CORS Initialization ===")
+    logger.info(f"Explicitly Allowed CORS Origins: {allowed_origins}")
+    logger.info(f"Allowed CORS Origin Regex Pattern: https?://.*\\.vercel\\.app(:[0-9]+)?")
+    logger.info(f"======================================")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"https?://.*\.vercel\.app",
+    allow_origin_regex=r"https?://.*\.vercel\.app(:[0-9]+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
