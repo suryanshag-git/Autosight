@@ -75,11 +75,20 @@ app = FastAPI(
 
 # CORS middleware configuration
 import os
-allowed_origins = settings.BACKEND_CORS_ORIGINS
+allowed_origins = list(settings.BACKEND_CORS_ORIGINS)
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
 if allowed_origins_env:
     # Supports comma-separated list of origins
     allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+
+# Force-allow production Vercel origins to prevent configuration issues on Railway env variables
+production_origins = [
+    "https://run-autosight.vercel.app",
+    "https://run-myapp.vercel.app"
+]
+for origin in production_origins:
+    if origin not in allowed_origins:
+        allowed_origins.append(origin)
 
 app.add_middleware(
     CORSMiddleware,
